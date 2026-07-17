@@ -1,0 +1,722 @@
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edu Streamix Tech - CSE Study Portal</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css?v=4.2">
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- Cropper.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <section class="page-view" id="login-view" style="overflow: hidden; position: relative;">
+        <!-- New Professional Split Layout -->
+        <div class="login-split-layout">
+            <!-- Left Branding Side -->
+            <div class="login-left-panel">
+                <div class="login-left-content">
+                    <div class="login-brand-icon-large animate-slide-up animate-delay-1">
+                        <i class="fa-solid fa-graduation-cap"></i> EST
+                    </div>
+                    <h1 class="login-hero-title animate-slide-up animate-delay-2">Unlock Your Academic Potential.</h1>
+                    <p class="login-hero-subtitle animate-slide-up animate-delay-3">Join thousands of CSE students mastering their curriculum through immersive learning and premium certifications.</p>
+                    
+                    <div class="login-testimonial animate-slide-up animate-delay-4">
+                        <div class="testimonial-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        <p class="testimonial-quote">"The best platform for my engineering journey. The certificates helped me land my first internship!"</p>
+                        <div class="testimonial-author">- Karthik S., 3rd Year CSE</div>
+                    </div>
+                </div>
+                
+                <!-- Abstract glowing shapes for premium feel -->
+                <div class="abstract-shape shape-1"></div>
+                <div class="abstract-shape shape-2"></div>
+            </div>
+
+            <!-- Right Form Side -->
+            <div class="login-right-panel">
+                <button class="action-btn theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme">
+                    <i class="fa-solid fa-moon" id="login-theme-icon"></i>
+                </button>
+                
+                <div class="login-form-container animate-slide-up animate-delay-2">
+                    <div class="login-header animate-slide-up animate-delay-3">
+                        <h2 class="login-title">Welcome Back</h2>
+                        <p class="login-description">Sign in to access your dashboard.</p>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form id="login-form" onsubmit="submitLogin(event)" class="animate-slide-up animate-delay-4">
+                        <div class="input-group">
+                            <label for="login-fullname">Full Name</label>
+                            <input type="text" id="login-fullname" class="login-input" placeholder="Enter your full name" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="login-username">Username or Email</label>
+                            <input type="text" id="login-username" class="login-input" placeholder="Enter your username or email" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" class="login-input" placeholder="Enter your password" required>
+                        </div>
+                        
+                        <div class="login-actions">
+                            <button class="btn btn-primary login-submit-btn" type="submit">Sign In <i class="fa-solid fa-arrow-right"></i></button>
+                            
+                            <div class="login-divider"><span>or continue with</span></div>
+                            
+                            <button class="btn btn-google" type="button" onclick="googleSignInMock()">
+                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
+                                Sign in with Google
+                            </button>
+                        </div>
+                        
+                        <div class="login-error" id="login-error"></div>
+                        
+                        <p class="login-footer">
+                            Don't have an account? <a href="#" onclick="toggleAuthForm('register'); return false;">Create one now</a>
+                        </p>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form id="register-form" onsubmit="submitRegister(event)" style="display: none;" class="animate-slide-up">
+                        <div class="input-group">
+                            <label for="register-fullname">Full Name</label>
+                            <input type="text" id="register-fullname" class="login-input" placeholder="Enter your full name" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="register-username">Username or Email</label>
+                            <input type="text" id="register-username" class="login-input" placeholder="Create a username or email" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="register-password">Password</label>
+                            <input type="password" id="register-password" class="login-input" placeholder="Create a strong password" required oninput="checkPasswordStrength()">
+                            <div id="password-strength-meter" class="pwd-meter">
+                                <div id="password-strength-bar" class="pwd-bar"></div>
+                            </div>
+                            <p id="password-strength-text" class="pwd-text">Use 8+ chars with uppercase, numbers, and symbols.</p>
+                        </div>
+                        
+                        <div class="login-actions">
+                            <button class="btn btn-primary login-submit-btn" type="submit">Create Account <i class="fa-solid fa-user-plus"></i></button>
+                            
+                            <div class="login-divider"><span>or sign up with</span></div>
+                            
+                            <button class="btn btn-google" type="button" onclick="googleSignInMock()">
+                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
+                                Sign up with Google
+                            </button>
+                        </div>
+                        
+                        <div class="register-error" id="register-error"></div>
+                        
+                        <p class="login-footer">
+                            Already have an account? <a href="#" onclick="toggleAuthForm('login'); return false;">Sign in here</a>
+                        </p>
+                    </form>
+
+                    <div class="login-partners">
+                        <p class="partners-title">Supported By</p>
+                        <div class="partners-logos">
+                            <img src="osmania_logo_black.png" alt="OU Logo" class="partner-logo" style="height: 36px;">
+                            <img src="otbi_logo_black.png" alt="OTBI Logo" class="partner-logo" style="height: 36px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Splash Screen View -->
+    <section class="page-view" id="splash-view">
+        <div class="splash-container">
+            <div class="splash-content">
+                <div class="splash-logos">
+                    <img src="osmania_logo_black.png" alt="Osmania University">
+                    <img src="otbi_logo_black.png" alt="OTBI">
+                </div>
+                <h1 style="font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 16px; background: var(--accent-gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Edu Streamix Tech</h1>
+                
+                <div class="splash-text-box" id="splash-payment-text">
+                    <div style="color: var(--text-secondary); font-size: 1.05rem; line-height: 1.6; text-align: left; background: rgba(0,0,0,0.2); padding: 24px; border-radius: 16px; border: 1px solid var(--glass-border);">
+                        <strong style="color: var(--text-primary); font-size: 1.25rem; display: block; margin-bottom: 12px; text-align: center;">🚀 Invest just ₹49 for 4 years of learning!</strong>
+                        Why spend thousands when you can unlock an amazing opportunity for just <strong style="color: var(--accent-emerald);">₹49</strong>?<br><br>
+                        <span style="color: var(--accent-emerald);">✅</span> Learn the complete CSE curriculum<br>
+                        <span style="color: var(--accent-emerald);">✅</span> Practice with quizzes to strengthen your concepts<br>
+                        <span style="color: var(--accent-emerald);">✅</span> Earn certificates to boost your resume and LinkedIn profile<br>
+                        <span style="color: var(--accent-emerald);">✅</span> Learn at your own pace, anytime, anywhere<br><br>
+                        A small investment today can make a big difference in your future. <strong style="color: var(--text-primary);">Register now and start building the skills that employers value!</strong> 💻📚
+                    </div>
+                </div>
+                
+                <div class="splash-spinner"></div>
+            </div>
+        </div>
+    </section>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">EST</div>
+                <span class="brand-name">Edu Streamix Tech</span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <div class="menu-section-title">Navigation</div>
+                <div class="menu-item active" id="menu-dashboard" onclick="switchView('dashboard')">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="menu-item" id="menu-bookmarks" onclick="switchView('bookmarks')">
+                    <i class="fa-solid fa-bookmark"></i>
+                    <span>Bookmarks</span>
+                </div>
+                <div class="menu-item" id="menu-workshop" onclick="switchView('workshop')">
+                    <i class="fa-solid fa-hammer"></i>
+                    <span>Workshop</span>
+                </div>
+
+                <div class="menu-section-title">Academic Syllabus</div>
+                <div class="year-dropdown" id="year-1">
+                    <div class="year-header" onclick="toggleYearDropdown('year-1')">
+                        <div class="year-header-left">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            <span>1st Year</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+                    <div class="semester-list">
+                        <div class="sem-item" data-year="0" data-sem="0" onclick="selectSemester(0, 0, 'I Year - I Semester')">Semester I</div>
+                        <div class="sem-item" data-year="0" data-sem="1" onclick="selectSemester(0, 1, 'I Year - II Semester')">Semester II</div>
+                    </div>
+                </div>
+
+                <div class="year-dropdown" id="year-2">
+                    <div class="year-header" onclick="toggleYearDropdown('year-2')">
+                        <div class="year-header-left">
+                            <i class="fa-solid fa-laptop-code"></i>
+                            <span>2nd Year</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+                    <div class="semester-list">
+                        <div class="sem-item" data-year="1" data-sem="0" onclick="selectSemester(1, 0, 'II Year - I Semester')">Semester I</div>
+                        <div class="sem-item" data-year="1" data-sem="1" onclick="selectSemester(1, 1, 'II Year - II Semester')">Semester II</div>
+                    </div>
+                </div>
+
+                <div class="year-dropdown" id="year-3">
+                    <div class="year-header" onclick="toggleYearDropdown('year-3')">
+                        <div class="year-header-left">
+                            <i class="fa-solid fa-cubes"></i>
+                            <span>3rd Year</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+                    <div class="semester-list">
+                        <div class="sem-item" data-year="2" data-sem="0" onclick="selectSemester(2, 0, 'III Year - I Semester')">Semester I</div>
+                        <div class="sem-item" data-year="2" data-sem="1" onclick="selectSemester(2, 1, 'III Year - II Semester')">Semester II</div>
+                    </div>
+                </div>
+
+                <div class="year-dropdown" id="year-4">
+                    <div class="year-header" onclick="toggleYearDropdown('year-4')">
+                        <div class="year-header-left">
+                            <i class="fa-solid fa-server"></i>
+                            <span>4th Year</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right chevron"></i>
+                    </div>
+                    <div class="semester-list">
+                        <div class="sem-item" data-year="3" data-sem="0" onclick="selectSemester(3, 0, 'IV Year - I Semester')">Semester I</div>
+                        <div class="sem-item" data-year="3" data-sem="1" onclick="selectSemester(3, 1, 'IV Year - II Semester')">Semester II</div>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="sidebar-partners" style="padding: 16px; border-top: 1px solid var(--glass-border); text-align: center; margin-top: auto;">
+                <p style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Supported By</p>
+                <div style="display: flex; justify-content: center; gap: 12px; align-items: center;">
+                    <img src="osmania_logo_black.png" alt="OU Logo" style="height: 32px;" class="partner-logo">
+                    <img src="otbi_logo_black.png" alt="OTBI Logo" style="height: 32px;" class="partner-logo">
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="menu-item" onclick="resetAllProgress()">
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span>Reset Progress</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Website Watermark -->
+            <div class="app-watermark">
+                <img src="osmania_logo_black.png" alt="App Background Watermark">
+                <img src="otbi_logo_black.png" alt="OTBI Background Watermark" style="margin-left: 20px;">
+            </div>
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="mobile-toggle" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </div>
+                
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" class="search-input" id="search-bar" placeholder="Search subject, unit, or topic..." oninput="handleSearch()">
+                </div>
+                
+                <div class="top-bar-actions">
+                    <button class="action-btn" onclick="toggleTheme()" title="Toggle Theme">
+                        <i class="fa-solid fa-moon" id="theme-icon"></i>
+                    </button>
+                    <button class="action-btn" onclick="switchView('bookmarks')" title="Bookmarks">
+                        <i class="fa-solid fa-bookmark"></i>
+                    </button>
+                    <button class="action-btn" onclick="logout()" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content Body -->
+            <div class="content-body">
+                <!-- VIEW 1: Dashboard -->
+                <section class="page-view active" id="dashboard-view">
+                    <h1 class="page-title" id="dashboard-welcome">Welcome back, Scholar</h1>
+                    <p class="page-subtitle">Track your B.Tech CSE learning progress and resume your studies.</p>
+                    
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fa-solid fa-book"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-total-subjects">47</h3>
+                                <p>Total Subjects</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon cyan">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-completed-chapters">0</h3>
+                                <p>Chapters Finished</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon emerald">
+                                <i class="fa-solid fa-percent"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-overall-progress">0%</h3>
+                                <p>Overall Progress</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-bookmarks-count">0</h3>
+                                <p>Bookmarks</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Dashboard Layout -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-panel">
+                            <div class="panel-header">
+                                <h2 class="panel-title">Syllabus Completion</h2>
+                            </div>
+                            <div class="semesters-progress-container" id="semester-progress-list">
+                                <!-- Dynamic semester progress bars -->
+                            </div>
+                        </div>
+                        <div class="dashboard-panel" style="margin-top: 24px;">
+                            <div class="panel-header">
+                                <h2 class="panel-title"><i class="fa-solid fa-award"></i> Academic Year Certificates</h2>
+                                <button id="test-unlock-btn" onclick="clearedQuizzesState={'0-0':true,'0-1':true,'0-2':true,'0-3':true,'0-4':true,'0-5':true,'1-0':true,'1-1':true,'1-2':true,'1-3':true,'1-4':true,'1-5':true};localStorage.setItem('cse_portal_cleared_quizzes',JSON.stringify(clearedQuizzesState));updateDashboardStats();" style="opacity:0; position:absolute; pointer-events:all; width:1px; height:1px; border:none; background:none;" aria-label="Test Unlock"></button>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px; padding: 16px; background: rgba(16, 185, 129, 0.05); border: 1px dashed var(--accent-emerald); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                                <div>
+                                    <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 4px;"><i class="fa-solid fa-id-badge" style="color: var(--accent-emerald); margin-right: 8px;"></i>Official Certificate Photo</h3>
+                                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Upload a professional passport-size photo (JPG/JPEG/PNG) to be embedded securely into your verified certificates.</p>
+                                </div>
+                                <div>
+                                    <input type="file" id="cert-photo-upload" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onchange="handleCertPhotoUpload(event)" style="display: none;">
+                                    <label for="cert-photo-upload" class="btn" style="cursor: pointer; background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Photo
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="certificates-list-container" id="certificates-list" style="display: flex; flex-direction: column; gap: 16px; padding: 8px 0;">
+                                <!-- Dynamic Year Certificates will render here -->
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-sidebar-panels">
+                            <!-- Pomodoro Widget -->
+                            <div class="pomodoro-card">
+                                <h3 class="timer-title">Study Session</h3>
+                                <p class="timer-subtitle">Boost your focus with Pomodoro technique</p>
+                                <div class="timer-display" id="timer-display">25:00</div>
+                                <div class="timer-controls">
+                                    <button class="btn btn-primary" id="timer-play-btn" onclick="toggleTimer()">
+                                        <i class="fa-solid fa-play"></i> Start
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="resetTimer()">
+                                        <i class="fa-solid fa-rotate-right"></i> Reset
+                                    </button>
+                                </div>
+                                <div class="timer-modes">
+                                    <button class="timer-mode-btn active" id="mode-work" onclick="setTimerMode('work')">Focus</button>
+                                    <button class="timer-mode-btn" id="mode-short" onclick="setTimerMode('short')">Short Break</button>
+                                    <button class="timer-mode-btn" id="mode-long" onclick="setTimerMode('long')">Long Break</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Recently Opened/Quick Resume Panel -->
+                            <div class="dashboard-panel" style="margin-top: 24px;">
+                                <div class="panel-header">
+                                    <h2 class="panel-title">Quick Resume</h2>
+                                </div>
+                                <div class="resume-list" id="resume-list">
+                                    <!-- Dynamic list of recent study units -->
+                                    <div class="empty-state" style="padding: 20px 0;">
+                                        <p>No recent activity. Start studying a subject to see it here!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 2: Courseware (Syllabus Semesters) -->
+                <section class="page-view" id="courseware-view">
+                    <div id="semester-header-section">
+                        <h1 class="page-title" id="courseware-title">I Year - I Semester</h1>
+                        <p class="page-subtitle" id="courseware-subtitle">Syllabus for R22 Computer Science & Engineering</p>
+                    </div>
+
+                    <!-- Subjects Grid View -->
+                    <div class="subjects-grid" id="subjects-grid">
+                        <!-- Dynamic subject cards -->
+                    </div>
+
+                    <!-- Subject Chapters Detail View (Initially hidden, shown when subject is opened) -->
+                    <div class="subject-chapters-view" id="subject-chapters-view">
+                        <div class="back-btn" onclick="backToSubjects()">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back to Subjects</span>
+                        </div>
+                        <h2 class="page-title" id="chapter-subject-title">Matrices and Calculus</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+                            <p class="page-subtitle" id="chapter-subject-desc" style="margin-bottom: 0;">Curated video lecture search pathways per unit</p>
+                            <button class="btn btn-primary" onclick="startSubjectQuizFromChapters()" id="chapter-quiz-btn"><i class="fa-solid fa-award"></i> Take Subject Quiz</button>
+                        </div>
+                        
+                        <div class="chapters-list" id="chapters-list">
+                            <!-- Dynamic unit chapters list -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 3: Workshop -->
+                <section class="page-view" id="workshop-view">
+                    <div id="workshop-header-section">
+                        <h1 class="page-title">Engineering Workshop</h1>
+                        <p class="page-subtitle">Hands-on practice units for your CSE workshop course.</p>
+                    </div>
+                    <div class="dashboard-panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Workshop Units</h2>
+                            <button class="btn btn-secondary" onclick="switchView('courseware')">Go to Syllabus</button>
+                        </div>
+                        <div class="chapters-list" id="workshop-chapters-list">
+                            <!-- Dynamic workshop units will render here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 4: Bookmarks -->
+                <section class="page-view" id="bookmarks-view">
+                    <h1 class="page-title">Bookmarked Topics</h1>
+                    <p class="page-subtitle">Your saved study chapters for quick review.</p>
+                    <div class="bookmarks-list" id="bookmarks-list">
+                        <!-- Dynamic bookmark items -->
+                        <div class="empty-state">
+                            <i class="fa-solid fa-bookmark"></i>
+                            <h4>No bookmarks yet</h4>
+                            <p>Bookmark important units within subject pages to view them here.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 4: Search Results -->
+                <section class="page-view" id="search-view">
+                    <h1 class="page-title">Search Results</h1>
+                    <p class="page-subtitle" id="search-results-summary">Showing matches for your query</p>
+                    <div class="search-results-list" id="search-results-list">
+                        <!-- Dynamic search result items -->
+                    </div>
+                </section>
+
+                <!-- VIEW 5: Quiz View -->
+                <section class="page-view" id="quiz-view">
+                    <div class="back-btn" onclick="backToSyllabusFromQuiz()">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Cancel Quiz</span>
+                    </div>
+                    <h1 class="page-title" id="quiz-subject-title">Subject Evaluation Quiz</h1>
+                    <p class="page-subtitle" id="quiz-subject-subtitle">Test your understanding to earn your completion certificate.</p>
+                    
+                    <div class="dashboard-panel" id="quiz-container">
+                        <!-- Progress bar -->
+                        <div class="panel-header" style="margin-bottom: 10px;">
+                            <span class="panel-title" id="quiz-progress-text">Question 1 of 5</span>
+                            <span id="quiz-score-live" style="font-weight: 700; color: var(--accent-cyan);">75% to pass</span>
+                        </div>
+                        <div class="subject-progress-bar-wrapper" style="margin-bottom: 24px; height: 8px;">
+                            <div class="subject-progress-bar" id="quiz-progress-bar" style="width: 20%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo));"></div>
+                        </div>
+
+                        <!-- Question Box -->
+                        <div id="quiz-question-box" style="margin-bottom: 24px;">
+                            <h3 id="quiz-question-text" style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; margin-bottom: 16px; line-height: 1.5;">Question text goes here?</h3>
+                            <div id="quiz-options-list" style="display: flex; flex-direction: column; gap: 12px;">
+                                <!-- Dynamic Options will render here -->
+                            </div>
+                        </div>
+
+                        <div class="modal-actions" style="justify-content: flex-end;">
+                            <button class="btn btn-primary" id="quiz-action-btn" onclick="submitAnswer()" disabled>Next Question <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Result view (Initially hidden) -->
+                    <div class="dashboard-panel" id="quiz-result-box" style="display: none; text-align: center; padding: 40px 20px;">
+                        <div id="quiz-result-icon" style="font-size: 4rem; margin-bottom: 20px; color: var(--accent-emerald);">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <h2 class="page-title" id="quiz-result-title" style="margin-bottom: 8px;">Evaluation Passed!</h2>
+                        <p class="page-subtitle" id="quiz-result-score" style="margin-bottom: 24px; font-weight: 700; font-size: 1.2rem; color: var(--text-primary);">You scored 80% (4/5)</p>
+                        
+                        <!-- Answers Review Section -->
+                        <div id="quiz-answers-review" style="margin-bottom: 32px; text-align: left; display: flex; flex-direction: column; gap: 16px; max-height: 400px; overflow-y: auto; padding: 12px; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(0,0,0,0.15);">
+                            <!-- Dynamic question review cards will render here -->
+                        </div>
+                        
+                        <!-- Passing Section -->
+                        <div id="quiz-pass-section" style="max-width: 480px; margin: 0 auto;">
+                            <p style="margin-bottom: 20px; font-size: 0.95rem; color: var(--text-secondary);">Congratulations, you have demonstrated proficiency in this subject! Enter your name below to claim your Certificate of Syllabus Completion.</p>
+                            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; text-align: left;">
+                                <label for="student-name-input" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Your Full Name</label>
+                                <input type="text" id="student-name-input" class="search-input" placeholder="e.g. Thanuja Sri" style="padding-left: 20px; height: 48px; border-radius: 12px;">
+                            </div>
+                            <div style="display: flex; justify-content: center; gap: 12px;">
+                                <button class="btn btn-primary" onclick="claimCertificate()">
+                                    <i class="fa-solid fa-award"></i> Claim Certificate
+                                </button>
+                                <button class="btn btn-secondary" onclick="backToSyllabusFromQuiz()">Back to Syllabus</button>
+                            </div>
+                        </div>
+
+                        <!-- Failing Section -->
+                        <div id="quiz-fail-section" style="max-width: 480px; margin: 0 auto; display: none;">
+                            <p style="margin-bottom: 24px; font-size: 0.95rem; color: var(--text-secondary);">You need at least 75% correct answers to qualify for a certificate. Review the syllabus units and try again!</p>
+                            <div style="display: flex; justify-content: center; gap: 12px;">
+                                <button class="btn btn-primary" onclick="restartActiveQuiz()">
+                                    <i class="fa-solid fa-arrow-rotate-left"></i> Try Again
+                                </button>
+                                <button class="btn btn-secondary" onclick="backToSyllabusFromQuiz()">Back to Syllabus</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Embedded Video Modal -->
+    <div class="modal-overlay" id="video-modal-overlay" onclick="closeEmbeddedVideo(event)">
+        <div class="video-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="video-modal-title">Embedded Video</h3>
+                    <p class="modal-subtitle" id="video-modal-subtitle">Topic video content</p>
+                </div>
+                <span class="close-modal" onclick="closeEmbeddedVideo()">&times;</span>
+            </div>
+            <div class="video-frame-wrapper">
+                <iframe id="embedded-video-frame" class="video-iframe" title="Embedded study video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
+            <div class="video-disclaimer">
+                <strong>Disclaimer:</strong> Embedded videos are the property of their respective creators and YouTube channels. All copyrights, trademarks, and intellectual property rights belong to the original owners. This platform does not claim ownership of the video content.
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Modal overlay -->
+    <div class="modal-overlay" id="notes-modal-overlay">
+        <div class="notes-modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="notes-modal-title">Study Notes</h3>
+                <span class="close-modal" onclick="closeNotes()">&times;</span>
+            </div>
+            <p id="notes-modal-subtitle" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;"></p>
+            <textarea class="notes-textarea" id="notes-text" placeholder="Type your personal study notes, reminders, formula sheets, or review questions here..."></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeNotes()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNotes()">Save Notes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Modal Overlay -->
+    <div class="modal-overlay" id="cert-modal-overlay">
+        <div class="notes-modal cert-modal-content" style="max-width: 900px; width: 95%; padding: 0; background: none; border: none; box-shadow: none;">
+            <!-- Actions -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 16px;" class="no-print">
+                <button class="btn btn-primary" onclick="downloadAndSyncCertificate()"><i class="fa-solid fa-download"></i> Download & Sync to Drive</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('cert-modal-overlay').classList.remove('active')"><i class="fa-solid fa-xmark"></i> Close</button>
+            </div>
+            <!-- Certificate frame styling inside modal -->
+            <div class="certificate-frame" id="certificate-print-area">
+                <!-- Large watermark background -->
+                <div class="cert-watermark-bg">
+                    <img src="osmania_logo_black.png" alt="OU Watermark">
+                </div>
+                
+                <div class="cert-border-outer">
+                    <div class="cert-border-inner">
+                        
+                        <!-- Top Header with Logos -->
+                        <div class="cert-header">
+                            <div class="cert-partner-logos">
+                                <img src="osmania_logo_black.png" alt="Osmania University Logo" class="cert-logo">
+                                <div class="cert-header-text">
+                                    <h1 class="cert-university-title">Osmania University</h1>
+                                    <h2 class="cert-partner-title">In Collaboration with OTBI & Edu Streamix Tech</h2>
+                                </div>
+                                <div style="display: flex; gap: 20px; align-items: center;">
+                                    <img src="otbi_logo_black.png" alt="OTBI Logo" class="cert-logo">
+                                    <img src="tchetty_logo.png" style="height: 70px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);" alt="Powered by Tchetty">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Main Title -->
+                        <div class="cert-title-container">
+                            <h1 class="cert-title">Certificate of Excellence</h1>
+                            <div class="cert-divider"></div>
+                        </div>
+                        
+                        <!-- Body -->
+                        <div class="cert-body" style="position: relative; padding: 0 40px; min-height: 200px;">
+                            <!-- Profile Photo -->
+                            <div id="cert-photo-wrapper" style="display: none; position: absolute; top: 0; left: 0; padding: 4px; background: white; border: 1px solid #d4af37; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 5;">
+                                <img id="cert-profile-photo" src="" alt="Profile Photo" style="width: 100px; height: 130px; object-fit: cover; display: block;">
+                            </div>
+                            
+                            <div style="text-align: center;">
+                                <p class="cert-presented">This is proudly presented to</p>
+                                <h2 class="cert-name" id="cert-name-text">Student Name</h2>
+                                <p class="cert-text" style="max-width: 80%; margin: 0 auto;">
+                                    for successfully completing all required coursework, modules, and formal examinations for the B.Tech Computer Science & Engineering curriculum.
+                                </p>
+                                <h3 class="cert-subject" id="cert-subject-text">Course Year</h3>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="cert-footer">
+                            <div class="cert-qr-section">
+                                <img src="" id="cert-qr-img" alt="Verification QR Code">
+                                <p>Scan to Verify</p>
+                                <p id="cert-id-text">ID: EST-XXXXX</p>
+                            </div>
+                            
+                            <div class="cert-seal">
+                                <div class="cert-seal-inner">
+                                    <i class="fa-solid fa-award"></i>
+                                    <span>VERIFIED</span>
+                                </div>
+                            </div>
+                            
+                            <div class="cert-signatures">
+                                <div class="cert-sign">
+                                    <div class="cert-signature-line" style="font-family: 'Great Vibes', cursive; font-size: 2rem; padding-bottom: 0;">Prof. E. Suresh Kumar</div>
+                                    <div class="cert-footer-label">Vice Chancellor, OU</div>
+                                </div>
+                                <div class="cert-sign">
+                                    <div class="cert-signature-line" id="cert-date-text">Date</div>
+                                    <div class="cert-footer-label">Date of Issuance</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cropper Modal Overlay -->
+    <div class="modal-overlay" id="crop-modal-overlay" style="z-index: 2000;">
+        <div class="notes-modal" style="max-width: 500px; text-align: center; overflow: hidden;">
+            <div class="modal-header">
+                <h3 class="modal-title">Crop Your Photo</h3>
+                <span class="close-modal" onclick="closeCropper()">&times;</span>
+            </div>
+            <div style="width: 100%; height: 350px; background: #eee; margin: 16px 0; display: flex; justify-content: center; align-items: center;">
+                <img id="cropper-image" src="" style="max-width: 100%; max-height: 100%; display: block;">
+            </div>
+            <div class="modal-actions" style="justify-content: center; gap: 10px; margin-bottom: 16px;">
+                <button class="btn btn-secondary" onclick="if(cropper) cropper.zoom(0.1)"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom In</button>
+                <button class="btn btn-secondary" onclick="if(cropper) cropper.zoom(-0.1)"><i class="fa-solid fa-magnifying-glass-minus"></i> Zoom Out</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeCropper()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCroppedPhoto()"><i class="fa-solid fa-crop"></i> Crop & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio cues for Pomodoro timer -->
+    <audio id="alarm-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>
+
+    <!-- Live Visitor Widget Container -->
+    <div id="live-visitor-widget" class="live-visitor-container"></div>
+
+    <!-- Project Scripts -->
+    <script src="data.js"></script>
+    <script src="app.js?v=4.2"></script>
+</body>
+</html>
