@@ -1,1 +1,1 @@
-edu-orcin-nine.vercel.app
+https://edu-orcin-nine.vercel.app/
