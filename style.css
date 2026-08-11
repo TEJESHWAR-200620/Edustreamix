@@ -2024,3 +2024,203 @@ body::after {
     color: var(--text-secondary);
     margin-top: 4px;
 }
+
+/* ========== Google Sign-In Button ========== */
+.google-signin-btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.google-signin-btn iframe {
+    width: 100% !important;
+    max-width: 400px;
+}
+
+/* ========== Premium Button (Top Bar) ========== */
+.premium-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 18px;
+    border-radius: 24px;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), rgba(16, 185, 129, 0.15));
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #f59e0b;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.premium-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25);
+}
+
+.premium-btn.premium-active {
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(99, 102, 241, 0.2));
+    border-color: rgba(16, 185, 129, 0.5);
+    color: var(--accent-emerald);
+}
+
+/* ========== Subscription Modal & Plan Card ========== */
+.subscription-modal {
+    width: 90%;
+    max-width: 460px;
+}
+
+.modal-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.plan-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.plan-card {
+    position: relative;
+    background: var(--bg-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+}
+
+.plan-card.featured {
+    border-color: rgba(245, 158, 11, 0.45);
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.12);
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.06), var(--bg-primary));
+}
+
+.plan-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #f59e0b, #f97316);
+    color: #1a120b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.plan-name {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.plan-price {
+    font-family: var(--font-heading);
+    font-size: 3rem;
+    font-weight: 800;
+    background: var(--accent-gradient-2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+.plan-note {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+.plan-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.plan-features li i {
+    color: var(--accent-emerald);
+    flex-shrink: 0;
+}
+
+.plan-subscribe-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+}
+
+.plan-disclaimer {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ========== Demo Credentials Modal ========== */
+.demo-creds-modal {
+    width: 90%;
+    max-width: 480px;
+}
+
+.demo-creds-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.demo-cred-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.demo-cred-row span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.demo-cred-row code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.25);
+    padding: 4px 10px;
+    border-radius: 8px;
+    word-break: break-all;
+    text-align: right;
+}
+
+.demo-creds-note {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
