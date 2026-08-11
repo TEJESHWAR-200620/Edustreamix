@@ -14,11 +14,7 @@
     <link rel="stylesheet" href="style.css?v=4.2">
     <!-- Razorpay SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <!-- Cropper.js -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <!-- html2pdf.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 </head>
 <body>
     <section class="page-view" id="login-view" style="overflow: hidden; position: relative;">
@@ -31,11 +27,11 @@
                         <i class="fa-solid fa-graduation-cap"></i> EST
                     </div>
                     <h1 class="login-hero-title animate-slide-up animate-delay-2">Unlock Your Academic Potential.</h1>
-                    <p class="login-hero-subtitle animate-slide-up animate-delay-3">Join thousands of CSE students mastering their curriculum through immersive learning and premium certifications.</p>
+                    <p class="login-hero-subtitle animate-slide-up animate-delay-3">Join thousands of CSE students mastering their curriculum through immersive learning and structured resources.</p>
                     
                     <div class="login-testimonial animate-slide-up animate-delay-4">
                         <div class="testimonial-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-                        <p class="testimonial-quote">"The best platform for my engineering journey. The certificates helped me land my first internship!"</p>
+                        <p class="testimonial-quote">"The best platform for my engineering journey. The structured syllabus helped me ace my exams!"</p>
                         <div class="testimonial-author">- Karthik S., 3rd Year CSE</div>
                     </div>
                 </div>
@@ -159,7 +155,7 @@
                         Why spend thousands when you can unlock an amazing opportunity for just <strong style="color: var(--accent-emerald);">₹49</strong>?<br><br>
                         <span style="color: var(--accent-emerald);">✅</span> Learn the complete CSE curriculum<br>
                         <span style="color: var(--accent-emerald);">✅</span> Practice with quizzes to strengthen your concepts<br>
-                        <span style="color: var(--accent-emerald);">✅</span> Earn certificates to boost your resume and LinkedIn profile<br>
+                        <span style="color: var(--accent-emerald);">✅</span> Track your progress with detailed analytics<br>
                         <span style="color: var(--accent-emerald);">✅</span> Learn at your own pace, anytime, anywhere<br><br>
                         A small investment today can make a big difference in your future. <strong style="color: var(--text-primary);">Register now and start building the skills that employers value!</strong> 💻📚
                     </div>
@@ -358,29 +354,7 @@
                                 <!-- Dynamic semester progress bars -->
                             </div>
                         </div>
-                        <div class="dashboard-panel" style="margin-top: 24px;">
-                            <div class="panel-header">
-                                <h2 class="panel-title"><i class="fa-solid fa-award"></i> Academic Year Certificates</h2>
-                                <button id="test-unlock-btn" onclick="clearedQuizzesState={'0-0':true,'0-1':true,'0-2':true,'0-3':true,'0-4':true,'0-5':true,'1-0':true,'1-1':true,'1-2':true,'1-3':true,'1-4':true,'1-5':true};localStorage.setItem('cse_portal_cleared_quizzes',JSON.stringify(clearedQuizzesState));updateDashboardStats();" style="opacity:0; position:absolute; pointer-events:all; width:1px; height:1px; border:none; background:none;" aria-label="Test Unlock"></button>
-                            </div>
-                            
-                            <div style="margin-bottom: 20px; padding: 16px; background: rgba(16, 185, 129, 0.05); border: 1px dashed var(--accent-emerald); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-                                <div>
-                                    <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 4px;"><i class="fa-solid fa-id-badge" style="color: var(--accent-emerald); margin-right: 8px;"></i>Official Certificate Photo</h3>
-                                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Upload a professional passport-size photo (JPG/JPEG/PNG) to be embedded securely into your verified certificates.</p>
-                                </div>
-                                <div>
-                                    <input type="file" id="cert-photo-upload" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onchange="handleCertPhotoUpload(event)" style="display: none;">
-                                    <label for="cert-photo-upload" class="btn" style="cursor: pointer; background: var(--bg-secondary); border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Photo
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="certificates-list-container" id="certificates-list" style="display: flex; flex-direction: column; gap: 16px; padding: 8px 0;">
-                                <!-- Dynamic Year Certificates will render here -->
-                            </div>
-                        </div>
+
                         
                         <div class="dashboard-sidebar-panels">
                             <!-- Pomodoro Widget -->
@@ -496,7 +470,7 @@
                         <span>Cancel Quiz</span>
                     </div>
                     <h1 class="page-title" id="quiz-subject-title">Subject Evaluation Quiz</h1>
-                    <p class="page-subtitle" id="quiz-subject-subtitle">Test your understanding to earn your completion certificate.</p>
+                    <p class="page-subtitle" id="quiz-subject-subtitle">Test your understanding of the subject material.</p>
                     
                     <div class="dashboard-panel" id="quiz-container">
                         <!-- Progress bar -->
@@ -536,22 +510,18 @@
                         
                         <!-- Passing Section -->
                         <div id="quiz-pass-section" style="max-width: 480px; margin: 0 auto;">
-                            <p style="margin-bottom: 20px; font-size: 0.95rem; color: var(--text-secondary);">Congratulations, you have demonstrated proficiency in this subject! Enter your name below to claim your Certificate of Syllabus Completion.</p>
-                            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; text-align: left;">
-                                <label for="student-name-input" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Your Full Name</label>
-                                <input type="text" id="student-name-input" class="search-input" placeholder="e.g. Thanuja Sri" style="padding-left: 20px; height: 48px; border-radius: 12px;">
-                            </div>
+                            <p style="margin-bottom: 24px; font-size: 0.95rem; color: var(--text-secondary);">
+                                Congratulations! You have demonstrated proficiency in this subject.
+                            </p>
                             <div style="display: flex; justify-content: center; gap: 12px;">
-                                <button class="btn btn-primary" onclick="claimCertificate()">
-                                    <i class="fa-solid fa-award"></i> Claim Certificate
-                                </button>
-                                <button class="btn btn-secondary" onclick="backToSyllabusFromQuiz()">Back to Syllabus</button>
+                                <button class="btn btn-primary" onclick="backToSyllabusFromQuiz()">Back to Syllabus</button>
+                                <button class="btn btn-secondary" onclick="switchView('dashboard')">Go to Dashboard</button>
                             </div>
                         </div>
 
                         <!-- Failing Section -->
                         <div id="quiz-fail-section" style="max-width: 480px; margin: 0 auto; display: none;">
-                            <p style="margin-bottom: 24px; font-size: 0.95rem; color: var(--text-secondary);">You need at least 75% correct answers to qualify for a certificate. Review the syllabus units and try again!</p>
+                            <p style="margin-bottom: 24px; font-size: 0.95rem; color: var(--text-secondary);">You need at least 75% correct answers to pass. Review the syllabus units and try again!</p>
                             <div style="display: flex; justify-content: center; gap: 12px;">
                                 <button class="btn btn-primary" onclick="restartActiveQuiz()">
                                     <i class="fa-solid fa-arrow-rotate-left"></i> Try Again
@@ -600,114 +570,7 @@
         </div>
     </div>
 
-    <!-- Certificate Modal Overlay -->
-    <div class="modal-overlay" id="cert-modal-overlay">
-        <div class="notes-modal cert-modal-content" style="max-width: 900px; width: 95%; padding: 0; background: none; border: none; box-shadow: none;">
-            <!-- Actions -->
-            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 16px;" class="no-print">
-                <button class="btn btn-primary" onclick="downloadAndSyncCertificate()"><i class="fa-solid fa-download"></i> Download & Sync to Drive</button>
-                <button class="btn btn-secondary" onclick="document.getElementById('cert-modal-overlay').classList.remove('active')"><i class="fa-solid fa-xmark"></i> Close</button>
-            </div>
-            <!-- Certificate frame styling inside modal -->
-            <div class="certificate-frame" id="certificate-print-area">
-                <!-- Large watermark background -->
-                <div class="cert-watermark-bg">
-                    <img src="osmania_logo_black.png" alt="OU Watermark">
-                </div>
-                
-                <div class="cert-border-outer">
-                    <div class="cert-border-inner">
-                        
-                        <!-- Top Header with Logos -->
-                        <div class="cert-header">
-                            <div class="cert-partner-logos">
-                                <img src="osmania_logo_black.png" alt="Osmania University Logo" class="cert-logo">
-                                <div class="cert-header-text">
-                                    <h1 class="cert-university-title">Osmania University</h1>
-                                    <h2 class="cert-partner-title">In Collaboration with OTBI & Edu Streamix Tech</h2>
-                                </div>
-                                <div style="display: flex; gap: 20px; align-items: center;">
-                                    <img src="otbi_logo_black.png" alt="OTBI Logo" class="cert-logo">
-                                    <img src="tchetty_logo.png" style="height: 70px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);" alt="Powered by Tchetty">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Main Title -->
-                        <div class="cert-title-container">
-                            <h1 class="cert-title">Certificate of Excellence</h1>
-                            <div class="cert-divider"></div>
-                        </div>
-                        
-                        <!-- Body -->
-                        <div class="cert-body" style="position: relative; padding: 0 40px; min-height: 200px;">
-                            <!-- Profile Photo -->
-                            <div id="cert-photo-wrapper" style="display: none; position: absolute; top: 0; left: 0; padding: 4px; background: white; border: 1px solid #d4af37; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 5;">
-                                <img id="cert-profile-photo" src="" alt="Profile Photo" style="width: 100px; height: 130px; object-fit: cover; display: block;">
-                            </div>
-                            
-                            <div style="text-align: center;">
-                                <p class="cert-presented">This is proudly presented to</p>
-                                <h2 class="cert-name" id="cert-name-text">Student Name</h2>
-                                <p class="cert-text" style="max-width: 80%; margin: 0 auto;">
-                                    for successfully completing all required coursework, modules, and formal examinations for the B.Tech Computer Science & Engineering curriculum.
-                                </p>
-                                <h3 class="cert-subject" id="cert-subject-text">Course Year</h3>
-                            </div>
-                        </div>
-                        
-                        <!-- Footer -->
-                        <div class="cert-footer">
-                            <div class="cert-qr-section">
-                                <img src="" id="cert-qr-img" alt="Verification QR Code">
-                                <p>Scan to Verify</p>
-                                <p id="cert-id-text">ID: EST-XXXXX</p>
-                            </div>
-                            
-                            <div class="cert-seal">
-                                <div class="cert-seal-inner">
-                                    <i class="fa-solid fa-award"></i>
-                                    <span>VERIFIED</span>
-                                </div>
-                            </div>
-                            
-                            <div class="cert-signatures">
-                                <div class="cert-sign">
-                                    <div class="cert-signature-line" style="font-family: 'Great Vibes', cursive; font-size: 2rem; padding-bottom: 0;">Prof. E. Suresh Kumar</div>
-                                    <div class="cert-footer-label">Vice Chancellor, OU</div>
-                                </div>
-                                <div class="cert-sign">
-                                    <div class="cert-signature-line" id="cert-date-text">Date</div>
-                                    <div class="cert-footer-label">Date of Issuance</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Cropper Modal Overlay -->
-    <div class="modal-overlay" id="crop-modal-overlay" style="z-index: 2000;">
-        <div class="notes-modal" style="max-width: 500px; text-align: center; overflow: hidden;">
-            <div class="modal-header">
-                <h3 class="modal-title">Crop Your Photo</h3>
-                <span class="close-modal" onclick="closeCropper()">&times;</span>
-            </div>
-            <div style="width: 100%; height: 350px; background: #eee; margin: 16px 0; display: flex; justify-content: center; align-items: center;">
-                <img id="cropper-image" src="" style="max-width: 100%; max-height: 100%; display: block;">
-            </div>
-            <div class="modal-actions" style="justify-content: center; gap: 10px; margin-bottom: 16px;">
-                <button class="btn btn-secondary" onclick="if(cropper) cropper.zoom(0.1)"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom In</button>
-                <button class="btn btn-secondary" onclick="if(cropper) cropper.zoom(-0.1)"><i class="fa-solid fa-magnifying-glass-minus"></i> Zoom Out</button>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeCropper()">Cancel</button>
-                <button class="btn btn-primary" onclick="saveCroppedPhoto()"><i class="fa-solid fa-crop"></i> Crop & Save</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Audio cues for Pomodoro timer -->
     <audio id="alarm-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>

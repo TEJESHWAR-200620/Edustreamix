@@ -422,32 +422,6 @@ No bugs found. All buttons are properly connected with appropriate validation an
 
 ---
 
-## SECTION 10: CERTIFICATE BUTTONS (2)
-
-### Button 44: Claim Certificate Button
-- **HTML**: Line 426, button with `onclick="claimCertificate()"`
-- **JS Function**: Line 1241, `claimCertificate()`
-- **Behavior**:
-  - ✅ Shows certificate modal overlay
-  - ✅ Displays score percentage
-  - ✅ Shows congratulations message
-  - ✅ Displays student name and subject
-- **Result**: Certificate modal shows
-
-### Button 45: Print/Save PDF Button
-- **HTML**: Line 513, button with `onclick="printCertificate()"`
-- **JS Function**: Line 1273, `printCertificate()`
-- **Behavior**: ✅ Triggers browser print dialog
-- **Result**: User can print or save as PDF
-
-### Button 46: Close Certificate Button
-- **HTML**: Line 512, button with `onclick="closeCertificate()"`
-- **JS Function**: Line 1269, `closeCertificate()`
-- **Behavior**: ✅ Removes `.active` class from certificate modal
-- **Result**: Certificate modal closes
-
----
-
 ## SECTION 11: ACCESS CONTROL VERIFICATION
 
 ### Semester Access Control System
@@ -500,9 +474,7 @@ No bugs found. All buttons are properly connected with appropriate validation an
 - ✅ submitAnswer - advances through quiz
 - ✅ restartActiveQuiz - restarts quiz
 - ✅ backToSyllabusFromQuiz - exits quiz
-- ✅ claimCertificate - shows certificate
-- ✅ closeCertificate - closes certificate
-- ✅ printCertificate - prints/saves PDF
+
 
 ### All HTML Handlers Connected
 - ✅ 26 buttons with `onclick=` handlers
