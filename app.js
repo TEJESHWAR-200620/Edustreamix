@@ -98,204 +98,9 @@ function proceedToDashboard() {
 }
 
 
-// --- Year Completion Certificate Helper Functions ---
-function renderYearCertificates() {
-    clearedQuizzesState = JSON.parse(localStorage.getItem(LS_CLEARED_QUIZZES)) || {};
-    const container = document.getElementById('certificates-list');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    const years = [
-        { num: 1, name: "1st Year (Semester I & II)" },
-        { num: 2, name: "2nd Year (Semester I & II)" },
-        { num: 3, name: "3rd Year (Semester I & II)" },
-        { num: 4, name: "4th Year (Semester I & II)" }
-    ];
-    
-    years.forEach(year => {
-        const sem1Index = (year.num - 1) * 2;
-        const sem2Index = sem1Index + 1;
-        
-        let totalSubjects = 0;
-        let clearedSubjects = 0;
-        
-        [sem1Index, sem2Index].forEach(semIdx => {
-            const sem = cseAcademicData[semIdx];
-            if (sem) {
-                sem.subjects.forEach((subj, subjIdx) => {
-                    totalSubjects++;
-                    const key = `${semIdx}-${subjIdx}`;
-                    const isCleared = !!clearedQuizzesState[key];
-                    if (isCleared) {
-                        clearedSubjects++;
-                    }
-                });
-            }
-        });
-        
-        const allCleared = clearedSubjects === totalSubjects && totalSubjects > 0;
-        const isUnlocked = allCleared;
-        
-        const card = document.createElement('div');
-        card.className = `certificate-status-card ${isUnlocked ? 'unlocked' : 'locked'}`;
-        card.style.background = isUnlocked ? 'rgba(16, 185, 129, 0.04)' : 'rgba(255, 255, 255, 0.01)';
-        card.style.borderColor = isUnlocked ? 'rgba(16, 185, 129, 0.4)' : 'var(--glass-border)';
-        card.style.boxShadow = isUnlocked ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none';
-        
-        let buttonHtml = '';
-        const certPaidKey = 'rp_paid_cert_' + authUsername + '_' + year.num;
-        const isPaid = localStorage.getItem(certPaidKey) === 'true';
-        
-        if (isUnlocked) {
-            buttonHtml = `
-                <button class="btn btn-primary" onclick="claimYearCertificate(${year.num})" style="padding: 10px 20px; font-size: 0.9rem; font-weight: 600; height: 42px; border-radius: 8px; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); animation: pulseLogo 3s infinite alternate;">
-                    <i class="fa-solid fa-award"></i> ${isPaid ? 'View Certificate' : 'Claim Certificate (₹199)'}
-                </button>
-            `;
-        } else {
-            let lockLabel = `Locked (${clearedSubjects}/${totalSubjects})`;
-            buttonHtml = `
-                <button class="btn btn-secondary" disabled style="padding: 8px 16px; font-size: 0.85rem; height: 38px; border-radius: 8px; opacity: 0.5; cursor: not-allowed; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-lock"></i> ${lockLabel}
-                </button>
-            `;
-        }
-        
-        let noteText = '';
-        if (allCleared) {
-            noteText = 'All subjects cleared! Certificate unlocked.';
-        } else {
-            noteText = `Clear all ${totalSubjects} subjects in Semesters I & II to unlock.`;
-        }
-        
-        card.innerHTML = `
-            <div style="flex-grow: 1;">
-                <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-primary); font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <i class="fa-solid ${isUnlocked ? 'fa-certificate' : 'fa-lock'}" style="color: ${isUnlocked ? 'var(--accent-emerald)' : 'var(--text-muted)'};"></i>
-                    ${year.name} Completion
-                </h4>
-                <p style="font-size: 0.8rem; color: var(--text-secondary);">
-                    ${noteText}
-                </p>
-            </div>
-            <div>
-                ${buttonHtml}
-            </div>
-        `;
-        
-        container.appendChild(card);
-    });
-}
-
-let currentCertYear = null;
-let currentCertVerifyId = null;
-
-function generateCertificate(yearNum) {
-    currentCertYear = yearNum;
-    let studentName = localStorage.getItem('cert_student_name') || "";
-    if (!studentName) {
-        studentName = prompt("Enter your full name to generate your Year Completion Certificate:");
-        if (!studentName || studentName.trim() === '') {
-            alert("Name is required to generate the certificate.");
-            return;
-        }
-        studentName = studentName.trim();
-        localStorage.setItem('cert_student_name', studentName);
-    }
-    
-    document.getElementById('cert-name-text').textContent = studentName;
-    
-    // Set Profile Photo
-    const photoKey = 'cert_profile_photo_' + authUsername;
-    const photoData = localStorage.getItem(photoKey);
-    const photoWrapper = document.getElementById('cert-photo-wrapper');
-    const profilePhoto = document.getElementById('cert-profile-photo');
-    
-    if (photoWrapper && profilePhoto) {
-        if (photoData) {
-            profilePhoto.src = photoData;
-            photoWrapper.style.display = 'block';
-        } else {
-            profilePhoto.src = '';
-            photoWrapper.style.display = 'none';
-        }
-    }
-    
-    const yearNames = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-    const yearName = yearNames[yearNum - 1];
-    document.getElementById('cert-subject-text').textContent = `B.Tech Computer Science & Engineering - ${yearName}`;
-    
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    const today = new Date().toLocaleDateString('en-US', options);
-    document.getElementById('cert-date-text').textContent = today;
-    
-    // Generate QR code and verification ID
-    const verifyId = `EST-${new Date().getFullYear()}-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
-    currentCertVerifyId = verifyId;
-    document.getElementById('cert-id-text').textContent = `ID: ${verifyId}`;
-    
-    // Create verification URL pointing back to a public domain so mobile scanning works instantly
-    const verifyUrl = `https://edustreamix.com/verify?id=${verifyId}&name=${encodeURIComponent(studentName)}&year=${yearNum}`;
-    
-    // Set QR code image using a free API
-    const qrImg = document.getElementById('cert-qr-img');
-    if (qrImg) {
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verifyUrl)}&margin=10`;
-    }
-    
-    document.getElementById('cert-modal-overlay').classList.add('active');
-}
-
-function claimYearCertificate(yearNum) {
-    const certPaidKey = 'rp_paid_cert_' + authUsername + '_' + yearNum;
-    const hasPaidCert = localStorage.getItem(certPaidKey);
-    
-    // Require payment for ALL certificates and ALL users (including demo)
-    if (!hasPaidCert) {
-        const options = {
-            key: RAZORPAY_KEY_ID,
-            amount: 19900, // 199 INR in paise
-            currency: "INR",
-            name: "CSE Study Portal",
-            description: "Certificate Claim Fee - Year " + yearNum,
-            image: "osmania_logo_black.png",
-            handler: function (response) {
-                // Payment successful
-                localStorage.setItem(certPaidKey, 'true');
-                generateCertificate(yearNum);
-            },
-            prefill: {
-                name: authUser || "",
-            },
-            theme: {
-                color: "#10b981"
-            }
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response){
-            alert("Payment failed: " + response.error.description);
-        });
-        rzp.open();
-        return;
-    }
-    
-    generateCertificate(yearNum);
-}
-
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
-    // Check for verification URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('verify')) {
-        const verifyId = urlParams.get('verify');
-        const verifyName = urlParams.get('name');
-        const verifyYear = urlParams.get('year');
-        alert(`VERIFICATION SUCCESSFUL ✅\n\nCertificate ID: ${verifyId}\nStudent Name: ${verifyName}\nCompleted: Year ${verifyYear}\n\nThis certificate is authentic and officially issued by the Edu Streamix Board in collaboration with Osmania University.`);
-        // Clean URL to prevent re-alerting on refresh
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
     // Set theme
     const savedTheme = localStorage.getItem(LS_THEME) || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -338,9 +143,6 @@ function initializeAppForUser() {
         });
         localStorage.setItem(LS_CLEARED_QUIZZES, JSON.stringify(demoCleared));
         clearedQuizzesState = demoCleared;
-        
-        // Auto-mark the 1st year certificate as paid for the demo account
-        localStorage.setItem('rp_paid_cert_demo_1', 'true');
     }
 
     updateDashboardStats();
@@ -997,7 +799,6 @@ function submitLogin(event) {
 
     localStorage.setItem(LS_AUTH, authUser);
     localStorage.setItem('cse_portal_auth_username', authUsername);
-    localStorage.setItem('cert_student_name', authUser);
     errorBox.textContent = '';
     document.getElementById('login-form').reset();
     
@@ -1129,8 +930,6 @@ function submitRegister(event) {
                 authUsername = username;
                 localStorage.setItem(LS_AUTH, authUser);
                 localStorage.setItem('cse_portal_auth_username', authUsername);
-                localStorage.setItem('cert_student_name', authUser);
-                
                 const paidAccessKey = 'rp_paid_access_' + authUsername;
                 localStorage.setItem(paidAccessKey, 'true');
                 
@@ -1183,7 +982,7 @@ function toggleAuthForm(mode) {
             registerForm.style.display = 'block';
             registerForm.style.animation = 'fadeIn 0.25s forwards';
             if (loginTitle) loginTitle.textContent = "Create Account";
-            if (loginDesc) loginDesc.textContent = "Register to start tracking your syllabus and earning certificates.";
+            if (loginDesc) loginDesc.textContent = "Register to start tracking your syllabus and progress.";
         }, 250);
     } else {
         registerForm.style.animation = 'fadeOut 0.25s forwards';
@@ -1325,7 +1124,6 @@ function updateDashboardStats() {
     document.getElementById('stat-completed-chapters').textContent = completedChaptersCount;
     document.getElementById('stat-overall-progress').textContent = `${overallPercent}%`;
     document.getElementById('stat-bookmarks-count').textContent = bookmarksState.length;
-    renderYearCertificates();
 }
 
 // Render Semester Progress List on Dashboard
@@ -2073,10 +1871,9 @@ function showQuizResults() {
         clearedQuizzesState[key] = true;
         localStorage.setItem(LS_CLEARED_QUIZZES, JSON.stringify(clearedQuizzesState));
         
-        // Recalculate stats & certificates status on dashboard
+        // Recalculate stats on dashboard
         updateDashboardStats();
         
-        // Customize pass section to explain the year certificate requirement
         passSection.style.display = 'block';
         failSection.style.display = 'none';
         
@@ -2084,12 +1881,6 @@ function showQuizResults() {
             <p style="margin-bottom: 24px; font-size: 0.95rem; color: var(--text-secondary);">
                 Congratulations! You have demonstrated proficiency in <strong>${currentQuizSubjectName.replace(/^\d+\.\s+/, '')}</strong>.
             </p>
-            <div class="alert-info-box" style="padding: 16px; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(6, 182, 212, 0.05); text-align: left; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
-                <i class="fa-solid fa-lock" style="color: var(--accent-cyan); margin-top: 2px;"></i>
-                <span style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
-                    Subject-specific certificates are locked. Clear all other subjects in Semesters I & II for this academic year to unlock your Year Completion Certificate on the Dashboard.
-                </span>
-            </div>
             <div style="display: flex; justify-content: center; gap: 12px;">
                 <button class="btn btn-primary" onclick="backToSyllabusFromQuiz()">Back to Syllabus</button>
                 <button class="btn btn-secondary" onclick="switchView('dashboard')">Go to Dashboard</button>
@@ -2113,167 +1904,12 @@ function backToSyllabusFromQuiz() {
     selectSemester(currentYear, currentSem, cseAcademicData[semIndex].name);
 }
 
-function closeCertificate() {
-    document.getElementById('cert-modal-overlay').classList.remove('active');
-}
 
-function printCertificate() {
-    window.print();
-}
-
-let cropper = null;
-
-function handleCertPhotoUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // Check if it's an image
-    if (!file.type.match('image.*')) {
-        alert("Please upload a valid image file (JPG, JPEG, or PNG). PDFs cannot be directly embedded into the HTML certificate.");
-        event.target.value = ''; // Reset input
-        return;
-    }
-    
-    // Check file size (increased to 5MB to allow high quality before cropping)
-    if (file.size > 5 * 1024 * 1024) {
-        alert("File is too large. Please upload an image under 5MB.");
-        event.target.value = '';
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const image = document.getElementById('cropper-image');
-        image.src = e.target.result;
-        document.getElementById('crop-modal-overlay').classList.add('active');
-        
-        if (cropper) {
-            cropper.destroy();
-        }
-        
-        // Initialize Cropper.js
-        cropper = new Cropper(image, {
-            aspectRatio: 3 / 4, // Professional passport photo ratio
-            viewMode: 1,
-            autoCropArea: 0.8,
-            dragMode: 'move',
-            background: false
-        });
-        
-        event.target.value = ''; // Reset file input so same file can be selected again
-    };
-    reader.readAsDataURL(file);
-}
-
-function closeCropper() {
-    document.getElementById('crop-modal-overlay').classList.remove('active');
-    if (cropper) {
-        cropper.destroy();
-        cropper = null;
-    }
-}
-
-function saveCroppedPhoto() {
-    if (!cropper) return;
-    
-    // Get cropped canvas (Standardized to 300x400)
-    const canvas = cropper.getCroppedCanvas({
-        width: 300,
-        height: 400,
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high',
-    });
-    
-    // Compress to JPEG to save localStorage space
-    const base64Data = canvas.toDataURL('image/jpeg', 0.85);
-    const photoKey = 'cert_profile_photo_' + authUsername;
-    
-    try {
-        localStorage.setItem(photoKey, base64Data);
-        alert("Photo cropped and saved successfully! It is now permanently embedded on the left corner of your official certificates.");
-        closeCropper();
-    } catch (e) {
-        alert("Error saving photo. Storage quota exceeded.");
-    }
-}
-
-// --- Google Drive Integration ---
-const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; // REPLACE THIS URL
-
-function downloadAndSyncCertificate() {
-    if (typeof html2pdf === 'undefined') {
-        window.print();
-        return;
-    }
-    
-    const yearNum = currentCertYear;
-    const verifyId = currentCertVerifyId;
-    const studentName = document.getElementById('cert-name-text').textContent;
-    
-    const certElement = document.getElementById('certificate-print-area');
-    if (!certElement) return;
-    
-    alert("Preparing your Certificate for Download. It will also be securely synced to your Institution's Google Drive. Please wait a moment...");
-    
-    const opt = {
-        margin:       0,
-        filename:     `${studentName}_Year_${yearNum}_Certificate.pdf`,
-        image:        { type: 'jpeg', quality: 1 },
-        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
-    };
-    
-    // Add temporary styling to the original element for perfect PDF rendering
-    const originalShadow = certElement.style.boxShadow;
-    const originalBorderRadius = certElement.style.borderRadius;
-    certElement.style.boxShadow = 'none';
-    certElement.style.borderRadius = '0';
-    
-    // Convert to PDF and download it
-    const pdfInstance = html2pdf().set(opt).from(certElement);
-    
-    pdfInstance.save().then(() => {
-        // Restore original styling
-        certElement.style.boxShadow = originalShadow;
-        certElement.style.borderRadius = originalBorderRadius;
-        
-        // After download, convert to Base64 and send to Drive
-        pdfInstance.outputPdf('datauristring').then(function(pdfBase64) {
-            
-            const uploadedKey = 'drive_uploaded_' + authUsername + '_' + yearNum;
-            if (localStorage.getItem(uploadedKey)) {
-                return; // Already uploaded previously
-            }
-            
-            const base64Data = pdfBase64.split(',')[1];
-            
-            if (GOOGLE_SCRIPT_URL.includes('YOUR_GOOGLE')) {
-                return;
-            }
-            
-            // Send to Google Apps Script
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: studentName,
-                    year: yearNum,
-                    id: verifyId,
-                    mimeType: 'application/pdf',
-                    fileData: base64Data
-                }),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            }).then(response => {
-                console.log("Certificate uploaded to Drive!");
-                localStorage.setItem(uploadedKey, 'true');
-            }).catch(err => console.error("Drive upload failed:", err));
-        });
-    });
-}
 
 // --- Live Visitor Widget Logic ---
 const visitorNames = ["Rahul", "Priya", "Amit", "Sneha", "Karthik", "Neha", "Vikram", "Anjali", "Suresh", "Divya", "Rohit", "Kavya", "Arjun"];
 const visitorCities = ["Hyderabad", "Bangalore", "Chennai", "Delhi", "Mumbai", "Pune", "Kolkata", "Vizag", "Ahmedabad", "Noida"];
-const visitorActions = ["just logged in!", "claimed a 1st Year Certificate!", "is taking a quiz...", "claimed a 4th Year Certificate!", "just registered!", "unlocked a premium certificate!"];
+const visitorActions = ["just logged in!", "is taking a quiz...", "just registered!", "is studying hard!"];
 
 function triggerRandomVisitor() {
     const container = document.getElementById('live-visitor-widget');
