@@ -6,7 +6,7 @@
 
 > **Edu Streamix Tech** is a comprehensive **CSE Study Portal** designed for **Osmania University B.Tech CSE (R22)** students. It provides an interactive platform to track syllabus progress, watch embedded YouTube video lectures, take subject-wise quizzes, bookmark important topics, and manage personal study notes — all in one place.
 
-🔗 **Live Demo:** [https://edu-orcin-nine.vercel.app/](https://edu-orcin-nine.vercel.app/)
+🔗 **Live Demo:** [https://edu-orcin-nine.vercel.app/](https://edustreamix.vercel.app/)
 
 ---
 
