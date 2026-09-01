@@ -32,68 +32,215 @@ let timerSeconds = 0;
 let timerMode = 'work'; // work, short, long
 let isTimerRunning = false;
 
-// --- Razorpay Payment Logic ---
+// --- Configuration ---
+const GOOGLE_CLIENT_ID = '1042188228689-ud8v65nconnfnq47kktdg7e6dlmmdrvg.apps.googleusercontent.com';
 const RAZORPAY_KEY_ID = 'rzp_live_StslEhMPMwafBq';
+const SUBSCRIPTION_AMOUNT = 4900; // ₹49 in paise
+const SUBSCRIPTION_PLAN_NAME = 'Full Access';
+const DEMO_ACCOUNT = { fullname: 'demopro', username: 'demopro', email: 'demopro', password: 'demopro', isDemo: true };
+const FREE_ACCOUNT = { fullname: 'demo', username: 'demo', email: 'demo', password: 'demo', isDemo: false };
 
-function triggerSplashSequence(isPaid, callback) {
+// --- Splash & Post-Login Flow ---
+function triggerSplashSequence(callback) {
     switchView('splash');
-    
-    const paymentText = document.getElementById('splash-payment-text');
-    if (paymentText) {
-        paymentText.style.display = 'block';
-    }
     
     setTimeout(() => {
         if (callback) {
             callback();
         } else {
-            if (isPaid || authUsername === 'demo') {
-                switchView('dashboard');
-            }
+            switchView('dashboard');
         }
-    }, 5000);
+    }, 2500);
 }
 
 function proceedToDashboard() {
-    const paidAccessKey = 'rp_paid_access_' + authUsername;
-    const hasPaidAccess = localStorage.getItem(paidAccessKey);
-    const isPaid = (hasPaidAccess || authUsername === 'demo');
-    
-    triggerSplashSequence(isPaid, () => {
-        if (isPaid) {
+    triggerSplashSequence(() => {
+        switchView('dashboard');
+        updateSubscriptionUI();
+        maybePromptSubscription();
+    });
+}
+
+// --- Subscription Logic ---
+function getSubscriptionKey() {
+    return 'est_subscription_' + (authUsername || '');
+}
+
+function getSubscription() {
+    try {
+        return JSON.parse(localStorage.getItem(getSubscriptionKey())) || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+function hasActiveSubscription() {
+    if (isDemoAccount(authUsername)) return true;
+    const sub = getSubscription();
+    return !!(sub && sub.activatedAt);
+}
+
+function openSubscriptionModal(subtitle) {
+    const overlay = document.getElementById('subscription-modal-overlay');
+    if (!overlay) return;
+    const subtitleEl = document.getElementById('sub-modal-subtitle');
+    if (subtitleEl && subtitle) {
+        subtitleEl.textContent = subtitle;
+    }
+    overlay.classList.add('active');
+}
+
+function closeSubscriptionModal() {
+    document.getElementById('subscription-modal-overlay').classList.remove('active');
+}
+
+function subscribeToPlan() {
+    if (typeof window.Razorpay === 'undefined') {
+        alert('Payment gateway is not loaded. Please check your connection.');
+        return;
+    }
+
+    const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: SUBSCRIPTION_AMOUNT,
+        currency: "INR",
+        name: "Edu Streamix Tech",
+        description: SUBSCRIPTION_PLAN_NAME + " Subscription",
+        image: "osmania_logo_black.png",
+        handler: function (response) {
+            localStorage.setItem(getSubscriptionKey(), JSON.stringify({
+                plan: SUBSCRIPTION_PLAN_NAME,
+                amount: SUBSCRIPTION_AMOUNT,
+                paymentId: response.razorpay_payment_id,
+                activatedAt: Date.now()
+            }));
+            closeSubscriptionModal();
+            updateSubscriptionUI();
+            issueDemoCredentials();
             switchView('dashboard');
-        } else {
-            const options = {
-                key: RAZORPAY_KEY_ID,
-                amount: 4900, // 49 INR in paise
-                currency: "INR",
-                name: "CSE Study Portal",
-                description: "Website Access Fee",
-                image: "osmania_logo_black.png",
-                handler: function (response) {
-                    // Payment successful
-                    localStorage.setItem(paidAccessKey, 'true');
-                    switchView('dashboard');
-                },
-                prefill: {
-                    name: authUser || "",
-                },
-                theme: {
-                    color: "#10b981"
-                },
-                modal: {
-                    ondismiss: function() {
-                        logout();
-                    }
-                }
-            };
-            const rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response){
-                alert("Payment failed: " + response.error.description);
-                logout();
-            });
-            rzp.open();
+        },
+        prefill: {
+            name: authUser || "",
+            email: localStorage.getItem('cse_portal_google_email') || ""
+        },
+        theme: {
+            color: "#10b981"
         }
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.on('payment.failed', function (response) {
+        const desc = response.error && response.error.description ? response.error.description : 'Please try again.';
+        alert("Payment failed: " + desc);
+    });
+    rzp.open();
+}
+
+function updateSubscriptionUI() {
+    const btn = document.getElementById('premium-btn');
+    const label = document.getElementById('premium-btn-label');
+    if (!btn) return;
+    if (hasActiveSubscription()) {
+        btn.classList.add('premium-active');
+        btn.title = 'You have Full Access';
+        if (label) label.textContent = 'Premium';
+    } else {
+        btn.classList.remove('premium-active');
+        btn.title = 'Unlock Full Access for ₹49';
+        if (label) label.textContent = 'Go Premium';
+    }
+}
+
+function maybePromptSubscription() {
+    if (hasActiveSubscription()) return;
+    if (sessionStorage.getItem('est_sub_prompted') === '1') return;
+    sessionStorage.setItem('est_sub_prompted', '1');
+    openSubscriptionModal('Subscribe for ₹49 to unlock all quizzes and features.');
+}
+
+// --- Demo Account Logic ---
+function seedAccounts() {
+    try {
+        let registeredUsers = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
+        let changed = false;
+
+        // Account 1: WITHOUT subscription (normal user, quizzes gated)
+        if (!registeredUsers.some(u => u.username.toLowerCase() === FREE_ACCOUNT.username)) {
+            registeredUsers.push({
+                fullname: FREE_ACCOUNT.fullname,
+                username: FREE_ACCOUNT.username,
+                email: FREE_ACCOUNT.email,
+                password: FREE_ACCOUNT.password,
+                isDemo: false
+            });
+            changed = true;
+        }
+
+        // Account 2: WITH subscription (full access + demo perks)
+        if (!registeredUsers.some(u => u.username.toLowerCase() === DEMO_ACCOUNT.username)) {
+            registeredUsers.push({
+                fullname: DEMO_ACCOUNT.fullname,
+                username: DEMO_ACCOUNT.username,
+                email: DEMO_ACCOUNT.email,
+                password: DEMO_ACCOUNT.password,
+                isDemo: true
+            });
+            changed = true;
+        }
+
+        if (changed) {
+            localStorage.setItem('cse_portal_registered_users', JSON.stringify(registeredUsers));
+        }
+    } catch (error) {
+        console.warn('Unable to seed demo accounts:', error);
+    }
+}
+
+function isDemoAccount(username) {
+    if (!username) return false;
+    try {
+        const users = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
+        const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+        return !!(user && user.isDemo);
+    } catch (error) {
+        return false;
+    }
+}
+
+function issueDemoCredentials() {
+    let registeredUsers = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
+    const existing = registeredUsers.find(u => u.username.toLowerCase() === DEMO_ACCOUNT.username);
+    if (existing) {
+        existing.isDemo = true;
+        existing.email = DEMO_ACCOUNT.email;
+        existing.password = DEMO_ACCOUNT.password;
+    } else {
+        registeredUsers.push({
+            fullname: DEMO_ACCOUNT.fullname,
+            username: DEMO_ACCOUNT.username,
+            email: DEMO_ACCOUNT.email,
+            password: DEMO_ACCOUNT.password,
+            isDemo: true,
+            issuedAt: Date.now()
+        });
+    }
+    localStorage.setItem('cse_portal_registered_users', JSON.stringify(registeredUsers));
+    showDemoCredsModal();
+}
+
+function showDemoCredsModal() {
+    document.getElementById('demo-creds-modal-overlay').classList.add('active');
+}
+
+function closeDemoCredsModal() {
+    document.getElementById('demo-creds-modal-overlay').classList.remove('active');
+}
+
+function copyDemoCreds() {
+    const text = `Username: ${DEMO_ACCOUNT.username}\nEmail: ${DEMO_ACCOUNT.email}\nPassword: ${DEMO_ACCOUNT.password}`;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Demo credentials copied to clipboard.');
+    }).catch(() => {
+        alert(text);
     });
 }
 
@@ -101,6 +248,9 @@ function proceedToDashboard() {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+    // Seed the two fixed demo credentials
+    seedAccounts();
+
     // Set theme
     const savedTheme = localStorage.getItem(LS_THEME) || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -121,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         proceedToDashboard();
     } else {
         switchView('login');
+        initGoogleAuth();
     }
 
     // Bind event listeners for search
@@ -132,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeAppForUser() {
-    if (authUsername === 'demo') {
+    if (isDemoAccount(authUsername)) {
         let demoCleared = JSON.parse(localStorage.getItem(LS_CLEARED_QUIZZES)) || {};
         [0, 1, 2, 3, 4, 5, 6, 7].forEach(semIdx => {
             if (cseAcademicData[semIdx]) {
@@ -744,7 +895,14 @@ function resetAllProgress() {
         localStorage.removeItem(LS_RECENT);
         localStorage.removeItem(LS_CLEARED_QUIZZES);
         localStorage.removeItem('cse_portal_auth_username');
-        localStorage.removeItem('cse_portal_registered_users');
+        // Keep issued demo accounts (demopro) so subscribers don't lose them on reset
+        const users = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
+        const demoAccounts = users.filter(u => u.isDemo);
+        if (demoAccounts.length > 0) {
+            localStorage.setItem('cse_portal_registered_users', JSON.stringify(demoAccounts));
+        } else {
+            localStorage.removeItem('cse_portal_registered_users');
+        }
         progressState = {};
         bookmarksState = [];
         notesState = {};
@@ -773,29 +931,32 @@ function submitLogin(event) {
         return;
     }
 
-    if (username.toLowerCase() === 'demo') {
-        // Log in as demo
-        authUser = fullname;
-        authUsername = 'demo';
-    } else {
-        // Check registered users
-        let registeredUsers = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
-        const matchedUser = registeredUsers.find(user => user.username.toLowerCase() === username.toLowerCase());
-        
-        if (!matchedUser) {
+    // Check registered users
+    let registeredUsers = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
+    const matchedUser = registeredUsers.find(user => user.username.toLowerCase() === username.toLowerCase());
+
+    if (!matchedUser) {
+        if (username.toLowerCase() === DEMO_ACCOUNT.username) {
+            errorBox.textContent = 'The demo account is issued after your subscription purchase.';
+        } else {
             errorBox.textContent = 'Account not found. Please register first.';
-            return;
         }
-        
-        if (matchedUser.password !== password) {
-            errorBox.textContent = 'Incorrect password. Please try again.';
-            return;
-        }
-        
-        // Log in as matched user
-        authUser = matchedUser.fullname;
-        authUsername = matchedUser.username;
+        return;
     }
+
+    if (matchedUser.username.toLowerCase() === DEMO_ACCOUNT.username && !matchedUser.isDemo) {
+        errorBox.textContent = 'The demo account is issued after your subscription purchase.';
+        return;
+    }
+
+    if (matchedUser.password !== password) {
+        errorBox.textContent = 'Incorrect password. Please try again.';
+        return;
+    }
+
+    // Log in as matched user
+    authUser = matchedUser.fullname;
+    authUsername = matchedUser.username;
 
     localStorage.setItem(LS_AUTH, authUser);
     localStorage.setItem('cse_portal_auth_username', authUsername);
@@ -852,30 +1013,137 @@ function checkPasswordStrength() {
     }
 }
 
-function googleSignInMock() {
-    // Mock a Google Authentication flow
-    alert("Google Identity Services: Authenticating...");
-    setTimeout(() => {
-        // Log in the user automatically with a mock profile
-        localStorage.setItem(LS_AUTH_USER, "Google User");
-        localStorage.setItem(LS_AUTH_USERNAME, "googleuser123");
-        
-        // Hide auth screen and show main app
-        document.getElementById('login-view').classList.remove('active');
-        document.getElementById('splash-view').classList.add('active');
-        
-        // Setup state
-        authUser = "Google User";
-        authUsername = "googleuser123";
-        
+// --- Real Google Sign-In (Google Identity Services) ---
+let googleJwksCache = null;
+
+function initGoogleAuth() {
+    if (typeof google === 'undefined' || !google.accounts) {
+        console.warn('Google Identity Services failed to load. Check your connection.');
+        return;
+    }
+
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+        auto_select: false
+    });
+
+    ['google-signin-login', 'google-signin-register'].forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            google.accounts.id.renderButton(container, {
+                type: 'standard',
+                theme: 'outline',
+                size: 'large',
+                width: 400,
+                shape: 'pill'
+            });
+        }
+    });
+}
+
+function base64UrlDecode(str) {
+    const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    return atob(padded);
+}
+
+async function fetchGoogleJwks() {
+    if (googleJwksCache) return googleJwksCache;
+    const response = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+    if (!response.ok) {
+        throw new Error('Unable to fetch Google verification keys.');
+    }
+    googleJwksCache = await response.json();
+    return googleJwksCache;
+}
+
+async function verifyGoogleCredential(credential) {
+    const parts = credential.split('.');
+    if (parts.length !== 3) {
+        throw new Error('Malformed Google credential.');
+    }
+
+    const header = JSON.parse(base64UrlDecode(parts[0]));
+    const payload = JSON.parse(base64UrlDecode(parts[1]));
+
+    // Check claims
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
+        throw new Error('Credential was not issued by Google.');
+    }
+    if (payload.aud !== GOOGLE_CLIENT_ID) {
+        throw new Error('Credential is not intended for this application.');
+    }
+    if (!payload.exp || payload.exp <= now) {
+        throw new Error('Credential has expired.');
+    }
+    if (payload.email && !payload.email_verified) {
+        throw new Error('Google email is not verified.');
+    }
+
+    // Verify signature using Google's public keys
+    if (window.crypto && crypto.subtle) {
+        const jwks = await fetchGoogleJwks();
+        const key = jwks.keys.find(k => k.kid === header.kid);
+        if (!key) {
+            throw new Error('Google verification key not found.');
+        }
+        const importedKey = await crypto.subtle.importKey(
+            'jwk',
+            { kty: key.kty, n: key.n, e: key.e, alg: 'RS256', kid: key.kid, key_ops: ['verify'] },
+            { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+            false,
+            ['verify']
+        );
+        const data = new TextEncoder().encode(parts[0] + '.' + parts[1]);
+        const sig = Uint8Array.from(base64UrlDecode(parts[2]), c => c.charCodeAt(0));
+        const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', importedKey, sig, data);
+        if (!valid) {
+            throw new Error('Google signature verification failed.');
+        }
+    }
+
+    return payload;
+}
+
+async function handleGoogleCredentialResponse(response) {
+    try {
+        const payload = await verifyGoogleCredential(response.credential);
+
+        authUser = payload.name || payload.given_name || 'Google User';
+        authUsername = 'g_' + payload.sub;
+        localStorage.setItem(LS_AUTH, authUser);
+        localStorage.setItem('cse_portal_auth_username', authUsername);
+        if (payload.email) {
+            localStorage.setItem('cse_portal_google_email', payload.email);
+        }
+
+        // Save a Google profile record so the account persists across sessions
+        let registeredUsers = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
+        const existingUser = registeredUsers.find(u => u.username === authUsername);
+        if (!existingUser) {
+            registeredUsers.push({
+                fullname: authUser,
+                username: authUsername,
+                email: payload.email || '',
+                password: '',
+                isGoogle: true
+            });
+            localStorage.setItem('cse_portal_registered_users', JSON.stringify(registeredUsers));
+        }
+
+        const welcomeHeading = document.getElementById('dashboard-welcome');
+        if (welcomeHeading) {
+            welcomeHeading.textContent = `Welcome, ${authUser}`;
+        }
+
         initializeAppForUser();
-        document.getElementById('dashboard-welcome').textContent = `Welcome back, ${authUser}`;
-        
-        // Handle splash screen sequence
-        const rpPaidKey = 'rp_paid_' + authUsername;
-        const isPaid = localStorage.getItem(rpPaidKey) === 'true';
-        triggerSplashSequence(isPaid);
-    }, 1000);
+        proceedToDashboard();
+    } catch (error) {
+        alert('Google sign-in failed: ' + error.message);
+        console.error('Google sign-in error:', error);
+    }
 }
 
 function submitRegister(event) {
@@ -890,8 +1158,8 @@ function submitRegister(event) {
         return;
     }
     
-    if (username.toLowerCase() === 'demo') {
-        errorBox.textContent = 'The username "demo" is reserved. Please choose another username.';
+    if (username.toLowerCase() === 'demo' || username.toLowerCase() === DEMO_ACCOUNT.username) {
+        errorBox.textContent = 'The username "' + username.toLowerCase() + '" is reserved. Please choose another username.';
         return;
     }
     
@@ -911,60 +1179,25 @@ function submitRegister(event) {
         return;
     }
 
-    // Trigger Splash Screen and then Razorpay BEFORE saving user
-    triggerSplashSequence(false, () => {
-        const options = {
-            key: RAZORPAY_KEY_ID,
-            amount: 4900, // 49 INR
-            currency: "INR",
-            name: "CSE Study Portal",
-            description: "Website Access Fee (Registration)",
-            image: "osmania_logo_black.png",
-            handler: function (response) {
-                // Payment successful, save new user
-                registeredUsers.push({ fullname, username, password });
-                localStorage.setItem('cse_portal_registered_users', JSON.stringify(registeredUsers));
-                
-                // Auto login
-                authUser = fullname;
-                authUsername = username;
-                localStorage.setItem(LS_AUTH, authUser);
-                localStorage.setItem('cse_portal_auth_username', authUsername);
-                const paidAccessKey = 'rp_paid_access_' + authUsername;
-                localStorage.setItem(paidAccessKey, 'true');
-                
-                errorBox.textContent = '';
-                document.getElementById('register-form').reset();
-                
-                const welcomeHeading = document.getElementById('dashboard-welcome');
-                if (welcomeHeading) {
-                    welcomeHeading.textContent = `Welcome, ${authUser}`;
-                }
-                
-                initializeAppForUser();
-                switchView('dashboard');
-            },
-            prefill: {
-                name: fullname || "",
-            },
-            theme: {
-                color: "#10b981"
-            },
-            modal: {
-                ondismiss: function() {
-                    errorBox.textContent = 'Registration cancelled. Payment is required to register.';
-                    switchView('login');
-                }
-            }
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response){
-            alert("Payment failed: " + response.error.description);
-            errorBox.textContent = 'Registration failed due to payment failure.';
-            switchView('login');
-        });
-        rzp.open();
-    });
+    // Save the new user and log them in (subscription can be taken from the dashboard)
+    registeredUsers.push({ fullname, username, password });
+    localStorage.setItem('cse_portal_registered_users', JSON.stringify(registeredUsers));
+
+    authUser = fullname;
+    authUsername = username;
+    localStorage.setItem(LS_AUTH, authUser);
+    localStorage.setItem('cse_portal_auth_username', authUsername);
+
+    errorBox.textContent = '';
+    document.getElementById('register-form').reset();
+
+    const welcomeHeading = document.getElementById('dashboard-welcome');
+    if (welcomeHeading) {
+        welcomeHeading.textContent = `Welcome, ${authUser}`;
+    }
+
+    initializeAppForUser();
+    proceedToDashboard();
 }
 
 function toggleAuthForm(mode) {
@@ -1672,14 +1905,23 @@ async function createQuizQuestionsForSubject(subjectName) {
     return getLocalQuizQuestionsForSubject(subjectName);
 }
 
+// Subscription gate before any quiz
+function requireSubscription() {
+    if (hasActiveSubscription()) return true;
+    openSubscriptionModal('Subscribe for ₹49 to unlock quizzes and start your assessment.');
+    return false;
+}
+
 // Start quiz from subject card
 function startSubjectQuiz(subjIndex) {
+    if (!requireSubscription()) return;
     currentSubject = subjIndex;
     startQuizFlow();
 }
 
 // Start quiz from chapters view
 function startSubjectQuizFromChapters() {
+    if (!requireSubscription()) return;
     startQuizFlow();
 }
 

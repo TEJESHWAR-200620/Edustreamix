@@ -10,8 +10,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
+    <!-- Google Identity Services (Real Google Sign-In) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=4.2">
+    <link rel="stylesheet" href="style.css?v=5.0">
     <!-- Razorpay SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
@@ -75,10 +77,7 @@
                             
                             <div class="login-divider"><span>or continue with</span></div>
                             
-                            <button class="btn btn-google" type="button" onclick="googleSignInMock()">
-                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
-                                Sign in with Google
-                            </button>
+                            <div id="google-signin-login" class="google-signin-btn"></div>
                         </div>
                         
                         <div class="login-error" id="login-error"></div>
@@ -114,10 +113,7 @@
                             
                             <div class="login-divider"><span>or sign up with</span></div>
                             
-                            <button class="btn btn-google" type="button" onclick="googleSignInMock()">
-                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
-                                Sign up with Google
-                            </button>
+                            <div id="google-signin-register" class="google-signin-btn"></div>
                         </div>
                         
                         <div class="register-error" id="register-error"></div>
@@ -148,18 +144,6 @@
                     <img src="otbi_logo_black.png" alt="OTBI">
                 </div>
                 <h1 style="font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 16px; background: var(--accent-gradient-2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Edu Streamix Tech</h1>
-                
-                <div class="splash-text-box" id="splash-payment-text">
-                    <div style="color: var(--text-secondary); font-size: 1.05rem; line-height: 1.6; text-align: left; background: rgba(0,0,0,0.2); padding: 24px; border-radius: 16px; border: 1px solid var(--glass-border);">
-                        <strong style="color: var(--text-primary); font-size: 1.25rem; display: block; margin-bottom: 12px; text-align: center;">🚀 Invest just ₹49 for 4 years of learning!</strong>
-                        Why spend thousands when you can unlock an amazing opportunity for just <strong style="color: var(--accent-emerald);">₹49</strong>?<br><br>
-                        <span style="color: var(--accent-emerald);">✅</span> Learn the complete CSE curriculum<br>
-                        <span style="color: var(--accent-emerald);">✅</span> Practice with quizzes to strengthen your concepts<br>
-                        <span style="color: var(--accent-emerald);">✅</span> Track your progress with detailed analytics<br>
-                        <span style="color: var(--accent-emerald);">✅</span> Learn at your own pace, anytime, anywhere<br><br>
-                        A small investment today can make a big difference in your future. <strong style="color: var(--text-primary);">Register now and start building the skills that employers value!</strong> 💻📚
-                    </div>
-                </div>
                 
                 <div class="splash-spinner"></div>
             </div>
@@ -282,6 +266,9 @@
                 </div>
                 
                 <div class="top-bar-actions">
+                    <button class="premium-btn" id="premium-btn" onclick="openSubscriptionModal()" title="Unlock Full Access for ₹49">
+                        <i class="fa-solid fa-crown"></i> <span id="premium-btn-label">Go Premium</span>
+                    </button>
                     <button class="action-btn" onclick="toggleTheme()" title="Toggle Theme">
                         <i class="fa-solid fa-moon" id="theme-icon"></i>
                     </button>
@@ -572,6 +559,71 @@
 
 
 
+    <!-- Subscription Modal -->
+    <div class="modal-overlay" id="subscription-modal-overlay">
+        <div class="notes-modal subscription-modal">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Unlock Full Access</h3>
+                    <p class="modal-subtitle" id="sub-modal-subtitle">Subscribe to unlock quizzes and all features.</p>
+                </div>
+                <span class="close-modal" onclick="closeSubscriptionModal()">&times;</span>
+            </div>
+            <div class="plan-cards">
+                <div class="plan-card featured">
+                    <div class="plan-badge">Best Value</div>
+                    <div class="plan-name">Full Access</div>
+                    <div class="plan-price">₹49</div>
+                    <div class="plan-note">One-time payment · unlock everything</div>
+                    <ul class="plan-features">
+                        <li><i class="fa-solid fa-check"></i> All subjects & chapters</li>
+                        <li><i class="fa-solid fa-check"></i> Unlimited subject quizzes</li>
+                        <li><i class="fa-solid fa-check"></i> Progress tracking, notes & bookmarks</li>
+                        <li><i class="fa-solid fa-check"></i> Free demo account credentials</li>
+                    </ul>
+                    <button class="btn btn-primary plan-subscribe-btn" onclick="subscribeToPlan()">
+                        Subscribe ₹49 <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="plan-disclaimer">Secure payment processed by Razorpay.</p>
+        </div>
+    </div>
+
+    <!-- Demo Credentials Modal -->
+    <div class="modal-overlay" id="demo-creds-modal-overlay">
+        <div class="notes-modal demo-creds-modal">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Your Demo Account</h3>
+                    <p class="modal-subtitle">Save these credentials — use them to log in for demo mode.</p>
+                </div>
+                <span class="close-modal" onclick="closeDemoCredsModal()">&times;</span>
+            </div>
+            <div class="demo-creds-box">
+                <div class="demo-cred-row">
+                    <span>Username</span>
+                    <code>demopro</code>
+                </div>
+                <div class="demo-cred-row">
+                    <span>Email</span>
+                    <code>demopro</code>
+                </div>
+                <div class="demo-cred-row">
+                    <span>Password</span>
+                    <code>demopro</code>
+                </div>
+            </div>
+            <p class="demo-creds-note">These credentials were created after your subscription purchase. Bookmark this page or note them down now.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="copyDemoCreds()"><i class="fa-solid fa-copy"></i> Copy All</button>
+                <button class="btn btn-primary" onclick="closeDemoCredsModal()">Got it</button>
+            </div>
+        </div>
+    </div>
+
+
+
     <!-- Audio cues for Pomodoro timer -->
     <audio id="alarm-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>
 
@@ -580,6 +632,6 @@
 
     <!-- Project Scripts -->
     <script src="data.js"></script>
-    <script src="app.js?v=4.2"></script>
+    <script src="app.js?v=5.0"></script>
 </body>
 </html>

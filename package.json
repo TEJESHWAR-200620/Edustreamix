@@ -1,0 +1,9 @@
+{
+  "name": "edu-streamix-tech",
+  "version": "5.0.0",
+  "description": "Edu Streamix Tech - CSE Study Portal",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js"
+  }
+}
