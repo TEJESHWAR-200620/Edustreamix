@@ -185,6 +185,50 @@ body::after {
     font-weight: 800;
     box-shadow: var(--glow-primary);
     box-shadow: var(--glass-highlight);
+    overflow: hidden;
+}
+
+/* Site logo images (never inverted — full-color brand mark) */
+.site-logo {
+    filter: none;
+}
+
+.brand-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.login-site-logo {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    filter: drop-shadow(0 0 24px rgba(37, 99, 235, 0.35));
+}
+
+.splash-site-logo {
+    background: transparent;
+    border-radius: 16px;
+    padding: 0;
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+}
+
+.splash-logos img.splash-site-logo {
+    height: auto;
+}
+
+.cert-print-logo {
+    height: 72px;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto 12px;
+    display: block;
+    filter: none;
 }
 
 .brand-name {
@@ -1956,10 +2000,14 @@ body::after {
 
 
 
-/* Invert all dark logos to light in Dark Mode */
+/* Invert all dark logos to light in Dark Mode (site logo excluded — full color) */
 [data-theme="dark"] .partner-logo,
-[data-theme="dark"] .splash-logos img {
+[data-theme="dark"] .splash-logos img:not(.site-logo) {
     filter: invert(1) brightness(1.5) drop-shadow(0 0 10px rgba(255,255,255,0.1));
+}
+
+[data-theme="dark"] .splash-logos img.site-logo {
+    filter: drop-shadow(0 0 20px rgba(255,255,255,0.15));
 }
 
 /* Live Visitor Widget */
@@ -2223,4 +2271,395 @@ body::after {
     color: var(--text-secondary);
     line-height: 1.5;
     margin-bottom: 20px;
+}
+
+/* ========== Certificate Flow (Rs.99, separate from Rs.49 registration) ========== */
+.certificate-modal {
+    width: 94%;
+    max-width: 560px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+}
+
+.cert-fee-box {
+    background: var(--bg-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+}
+
+.cert-fee-cert {
+    color: var(--accent-emerald);
+    font-size: 1.05rem;
+}
+
+.cert-qr-wrap {
+    text-align: center;
+    margin: 16px 0;
+}
+
+.cert-qr-img {
+    width: min(260px, 100%);
+    height: auto;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: #fff;
+    padding: 8px;
+}
+
+.cert-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+.cert-manual-box {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.cert-manual-box code {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.cert-mail-card {
+    border-left: 3px solid var(--accent-emerald);
+}
+
+.cert-mail-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+}
+
+.cert-mail-title i {
+    color: var(--accent-emerald);
+    margin-right: 6px;
+}
+
+.cert-mail-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin: 8px 0;
+}
+
+.cert-mail-chip code {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    background: transparent;
+    padding: 2px 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.cert-mail-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.cert-copy-btn {
+    white-space: nowrap;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.cert-mail-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.cert-mail-actions .btn {
+    text-decoration: none;
+}
+
+.cert-preview {
+    width: min(320px, 100%);
+    height: auto;
+    margin-top: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.cert-success {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.cert-success h4 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+}
+
+.cert-card {
+    align-items: flex-start;
+}
+
+.cert-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+}
+
+.cert-badge.muted {
+    color: var(--text-muted);
+}
+
+.cert-badge.ready {
+    color: var(--accent-emerald);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.cert-badge.pending {
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.cert-badge.verified {
+    color: var(--accent-emerald);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.cert-badge.rejected {
+    color: var(--accent-rose);
+    border-color: rgba(244, 63, 94, 0.4);
+}
+
+.cert-email-warn {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-top: 12px;
+}
+
+/* Printable certificate */
+.cert-print {
+    background: #fff;
+    border-radius: 16px;
+    padding: 10px;
+    margin-bottom: 16px;
+}
+
+.cert-print-inner {
+    border: 3px double #b8860b;
+    border-radius: 12px;
+    padding: 36px 28px;
+    text-align: center;
+    color: #111827;
+    background: linear-gradient(180deg, #fffdf5, #ffffff);
+}
+
+.cert-print-brand {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: #b8860b;
+}
+
+.cert-print-title {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 8px 0 4px;
+}
+
+.cert-print-sub {
+    color: #4b5563;
+    margin: 10px 0 4px;
+}
+
+.cert-print-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 4px 0;
+}
+
+.cert-print-course {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 6px 0 16px;
+}
+
+.cert-print-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: #374151;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+    margin-top: 8px;
+}
+
+/* ========== Admin console mode (admin sessions only) ========== */
+#admin-dashboard {
+    display: none;
+}
+
+body.admin-mode #admin-dashboard {
+    display: block;
+}
+
+body.admin-mode #dashboard-view .stats-grid,
+body.admin-mode #dashboard-view .dashboard-grid {
+    display: none;
+}
+
+body.admin-mode #menu-bookmarks,
+body.admin-mode #menu-workshop,
+body.admin-mode #menu-certificates,
+body.admin-mode .sidebar .year-dropdown,
+body.admin-mode #premium-btn,
+body.admin-mode .top-bar .search-container,
+body.admin-mode .top-bar-actions .action-btn[title="Bookmarks"],
+body.admin-mode .sidebar-footer .menu-item {
+    display: none !important;
+}
+
+body.admin-mode .menu-section-title.syllabus-title {
+    display: none !important;
+}
+
+@media print {
+    body * { visibility: hidden; }
+    #cert-print-area, #cert-print-area * { visibility: visible; }
+    #cert-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+}
+
+.cert-fee-note {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* ========== Owner Verifications (admin-only in-app view) ========== */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.admin-table th, .admin-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--glass-border);
+    vertical-align: top;
+}
+
+.admin-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-approve {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: var(--accent-emerald);
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.btn-reject {
+    background: rgba(244, 63, 94, 0.12);
+    border: 1px solid rgba(244, 63, 94, 0.45);
+    color: var(--accent-rose);
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.btn-view {
+    background: var(--bg-primary);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.btn-approve:disabled, .btn-reject:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid var(--glass-border);
+}
+
+.pill.pending { color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); }
+.pill.issued { color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.4); }
+.pill.rejected { color: var(--accent-rose); border-color: rgba(244, 63, 94, 0.4); }
+
+@media (max-width: 760px) {
+    .admin-table thead { display: none; }
+    .admin-table tr { display: block; margin-bottom: 16px; border: 1px solid var(--glass-border); border-radius: 12px; padding: 8px; }
+    .admin-table td { display: block; border: 0; }
+}
+
+@media (max-width: 640px) {
+    .certificate-modal {
+        padding: 20px;
+    }
+    .video-modal {
+        padding: 16px;
+    }
 }

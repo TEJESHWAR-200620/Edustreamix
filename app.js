@@ -37,6 +37,8 @@ const GOOGLE_CLIENT_ID = '1042188228689-ud8v65nconnfnq47kktdg7e6dlmmdrvg.apps.go
 const RAZORPAY_KEY_ID = 'rzp_live_StslEhMPMwafBq';
 const SUBSCRIPTION_AMOUNT = 4900; // ₹49 in paise
 const SUBSCRIPTION_PLAN_NAME = 'Full Access';
+const CERTIFICATE_AMOUNT = 9900; // ₹99 in paise (certificate fee, same Razorpay Key ID)
+const OWNER_MANUAL_EMAIL = 't.harinarayana@gmail.com';
 const DEMO_ACCOUNT = { fullname: 'demopro', username: 'demopro', email: 'demopro', password: 'demopro', isDemo: true };
 const FREE_ACCOUNT = { fullname: 'demo', username: 'demo', email: 'demo', password: 'demo', isDemo: false };
 
@@ -76,8 +78,90 @@ function getSubscription() {
 
 function hasActiveSubscription() {
     if (isDemoAccount(authUsername)) return true;
+    if (typeof isAdminUser === 'function' && isAdminUser()) return true;
     const sub = getSubscription();
     return !!(sub && sub.activatedAt);
+}
+
+// --- Owner admin session (in-app login, like demopro) ---
+// The admin USERNAME is public (from /api/config); the password/ADMIN_KEY never
+// leaves the server — login exchanges it for a short-lived signed token.
+let serverAdminUsername = null;
+const SS_ADMIN_TOKEN = 'est_admin_token';
+const SS_ADMIN_USER = 'est_admin_user';
+
+function isAdminUser(username) {
+    const u = (typeof username !== 'undefined' && username) ? username : (typeof authUsername !== 'undefined' ? authUsername : null);
+    if (!u) return false;
+    const adminU = serverAdminUsername || sessionStorage.getItem(SS_ADMIN_USER);
+    if (!adminU || u.toLowerCase() !== adminU.toLowerCase()) return false;
+    return !!sessionStorage.getItem(SS_ADMIN_TOKEN);
+}
+
+function getAdminToken() {
+    return sessionStorage.getItem(SS_ADMIN_TOKEN) || '';
+}
+
+function clearAdminSession() {
+    sessionStorage.removeItem(SS_ADMIN_TOKEN);
+    sessionStorage.removeItem(SS_ADMIN_USER);
+}
+
+// Razorpay Key ID: single source of truth is RAZORPAY_KEY_ID in server .env,
+// exposed read-only via /api/config. Frontend caches it here; falls back to the
+// hardcoded const when offline. SECRET is never fetched — server-only.
+let serverRazorpayKeyId = null;
+
+function getRazorpayKeyId() {
+    return serverRazorpayKeyId || ((typeof RAZORPAY_KEY_ID !== 'undefined' && RAZORPAY_KEY_ID) || '');
+}
+
+async function fetchServerAdminUsername() {
+    try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        if (data && data.ok) {
+            if (data.adminUsername) serverAdminUsername = data.adminUsername;
+            if (data.razorpayKeyId) serverRazorpayKeyId = data.razorpayKeyId;
+            return serverAdminUsername;
+        }
+    } catch (error) { /* offline/static preview: no admin login */ }
+    return null;
+}
+
+async function loginAsAdmin(fullname, username, password, errorBox) {
+    try {
+        const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 429) {
+            errorBox.textContent = 'Too many attempts. Wait a minute and retry.';
+            return;
+        }
+        if (!res.ok || !data.ok || !data.token) {
+            errorBox.textContent = 'Invalid admin username or password.';
+            return;
+        }
+        const adminU = serverAdminUsername || username;
+        sessionStorage.setItem(SS_ADMIN_TOKEN, data.token);
+        sessionStorage.setItem(SS_ADMIN_USER, adminU);
+        authUser = (fullname && fullname.trim()) || adminU;
+        authUsername = adminU;
+        localStorage.setItem(LS_AUTH, authUser);
+        localStorage.setItem('cse_portal_auth_username', authUsername);
+        errorBox.textContent = '';
+        const form = document.getElementById('login-form');
+        if (form) form.reset();
+        const welcomeHeading = document.getElementById('dashboard-welcome');
+        if (welcomeHeading) welcomeHeading.textContent = `Welcome back, ${authUser}`;
+        initializeAppForUser();
+        proceedToDashboard();
+    } catch (error) {
+        errorBox.textContent = 'Cannot reach the server. Please check your connection.';
+    }
 }
 
 function openSubscriptionModal(subtitle) {
@@ -99,14 +183,19 @@ function subscribeToPlan() {
         alert('Payment gateway is not loaded. Please check your connection.');
         return;
     }
+    const keyId = getRazorpayKeyId();
+    if (!keyId) {
+        alert('Payment key is not configured. Please contact support.');
+        return;
+    }
 
     const options = {
-        key: RAZORPAY_KEY_ID,
+        key: keyId,
         amount: SUBSCRIPTION_AMOUNT,
         currency: "INR",
         name: "Edu Streamix Tech",
         description: SUBSCRIPTION_PLAN_NAME + " Subscription",
-        image: "osmania_logo_black.png",
+        image: window.location.origin + "/favicon.png?v=2",
         handler: function (response) {
             localStorage.setItem(getSubscriptionKey(), JSON.stringify({
                 plan: SUBSCRIPTION_PLAN_NAME,
@@ -248,6 +337,10 @@ function copyDemoCreds() {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+    // Fetch the (public) admin username so the login form can route admins
+    // to server-side verification. Non-blocking.
+    fetchServerAdminUsername();
+
     // Seed the two fixed demo credentials
     seedAccounts();
 
@@ -483,8 +576,9 @@ function countCompletedUnits(semIndex, subjIndex, totalUnits) {
     return count;
 }
 
-// Open chapters view for a subject
+// Open chapters view for a subject (₹49 subscribers only, like Take Quiz)
 function openSubjectChapters(subjIndex) {
+    if (!requireSubscription()) return;
     currentSubject = subjIndex;
     const semIndex = currentYear * 2 + currentSem;
     const subject = cseAcademicData[semIndex].subjects[subjIndex];
@@ -584,7 +678,7 @@ function openEmbeddedVideo(semIndex, subjIndex, unitIndex, event) {
 
     // Completely replace iframe to prevent Error 153 on reloads
     // Stripped restrictive 'allow' and 'referrerpolicy' attributes as they often break local file embeds
-    frameWrapper.innerHTML = `<iframe id="embedded-video-frame" class="video-iframe" title="Embedded study video" src="${videoUrl}" allowfullscreen></iframe>`;
+    frameWrapper.innerHTML = `<iframe id="embedded-video-frame" class="video-iframe" title="Course Video" src="${videoUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
     
     title.textContent = `${subject.name} • ${unit.unit}`;
     subtitle.textContent = unit.chapter;
@@ -747,6 +841,12 @@ function renderBookmarks() {
         `;
         list.appendChild(card);
     });
+}
+
+// Workshop entry point (₹49 subscribers only, like Take Quiz and Explore)
+function openWorkshop() {
+    if (!requireSubscription()) return;
+    switchView('workshop');
 }
 
 function renderWorkshopView() {
@@ -928,6 +1028,13 @@ function submitLogin(event) {
 
     if (!fullname || !username || !password) {
         errorBox.textContent = 'Please enter your full name, username, and password.';
+        return;
+    }
+
+    // Owner admin logs in through this same form (password verified server-side).
+    const knownAdminU = serverAdminUsername || sessionStorage.getItem(SS_ADMIN_USER);
+    if (knownAdminU && username.toLowerCase() === knownAdminU.toLowerCase()) {
+        loginAsAdmin(fullname, username, password, errorBox);
         return;
     }
 
@@ -1232,6 +1339,7 @@ function toggleAuthForm(mode) {
 function logout() {
     authUser = null;
     authUsername = null;
+    clearAdminSession();
     localStorage.removeItem(LS_AUTH);
     localStorage.removeItem('cse_portal_auth_username');
     switchView('login');
