@@ -1,5 +1,2 @@
 node_modules/
 .env
-data/uploads/
-data/certificate-payments.json
-data/user-stats.json

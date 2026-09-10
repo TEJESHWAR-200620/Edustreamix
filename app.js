@@ -78,33 +78,8 @@ function getSubscription() {
 
 function hasActiveSubscription() {
     if (isDemoAccount(authUsername)) return true;
-    if (typeof isAdminUser === 'function' && isAdminUser()) return true;
     const sub = getSubscription();
     return !!(sub && sub.activatedAt);
-}
-
-// --- Owner admin session (in-app login, like demopro) ---
-// The admin USERNAME is public (from /api/config); the password/ADMIN_KEY never
-// leaves the server — login exchanges it for a short-lived signed token.
-let serverAdminUsername = null;
-const SS_ADMIN_TOKEN = 'est_admin_token';
-const SS_ADMIN_USER = 'est_admin_user';
-
-function isAdminUser(username) {
-    const u = (typeof username !== 'undefined' && username) ? username : (typeof authUsername !== 'undefined' ? authUsername : null);
-    if (!u) return false;
-    const adminU = serverAdminUsername || sessionStorage.getItem(SS_ADMIN_USER);
-    if (!adminU || u.toLowerCase() !== adminU.toLowerCase()) return false;
-    return !!sessionStorage.getItem(SS_ADMIN_TOKEN);
-}
-
-function getAdminToken() {
-    return sessionStorage.getItem(SS_ADMIN_TOKEN) || '';
-}
-
-function clearAdminSession() {
-    sessionStorage.removeItem(SS_ADMIN_TOKEN);
-    sessionStorage.removeItem(SS_ADMIN_USER);
 }
 
 // Razorpay Key ID: single source of truth is RAZORPAY_KEY_ID in server .env,
@@ -116,52 +91,15 @@ function getRazorpayKeyId() {
     return serverRazorpayKeyId || ((typeof RAZORPAY_KEY_ID !== 'undefined' && RAZORPAY_KEY_ID) || '');
 }
 
-async function fetchServerAdminUsername() {
+async function fetchServerConfig() {
     try {
         const res = await fetch('/api/config');
         const data = await res.json();
         if (data && data.ok) {
-            if (data.adminUsername) serverAdminUsername = data.adminUsername;
             if (data.razorpayKeyId) serverRazorpayKeyId = data.razorpayKeyId;
-            return serverAdminUsername;
         }
-    } catch (error) { /* offline/static preview: no admin login */ }
+    } catch (error) { /* offline/static preview: use hardcoded key */ }
     return null;
-}
-
-async function loginAsAdmin(fullname, username, password, errorBox) {
-    try {
-        const res = await fetch('/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 429) {
-            errorBox.textContent = 'Too many attempts. Wait a minute and retry.';
-            return;
-        }
-        if (!res.ok || !data.ok || !data.token) {
-            errorBox.textContent = 'Invalid admin username or password.';
-            return;
-        }
-        const adminU = serverAdminUsername || username;
-        sessionStorage.setItem(SS_ADMIN_TOKEN, data.token);
-        sessionStorage.setItem(SS_ADMIN_USER, adminU);
-        authUser = (fullname && fullname.trim()) || adminU;
-        authUsername = adminU;
-        localStorage.setItem(LS_AUTH, authUser);
-        localStorage.setItem('cse_portal_auth_username', authUsername);
-        errorBox.textContent = '';
-        const form = document.getElementById('login-form');
-        if (form) form.reset();
-        const welcomeHeading = document.getElementById('dashboard-welcome');
-        if (welcomeHeading) welcomeHeading.textContent = `Welcome back, ${authUser}`;
-        initializeAppForUser();
-        proceedToDashboard();
-    } catch (error) {
-        errorBox.textContent = 'Cannot reach the server. Please check your connection.';
-    }
 }
 
 function openSubscriptionModal(subtitle) {
@@ -337,9 +275,8 @@ function copyDemoCreds() {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
-    // Fetch the (public) admin username so the login form can route admins
-    // to server-side verification. Non-blocking.
-    fetchServerAdminUsername();
+    // Fetch public Razorpay key for payments. Non-blocking.
+    fetchServerConfig();
 
     // Seed the two fixed demo credentials
     seedAccounts();
@@ -1031,13 +968,6 @@ function submitLogin(event) {
         return;
     }
 
-    // Owner admin logs in through this same form (password verified server-side).
-    const knownAdminU = serverAdminUsername || sessionStorage.getItem(SS_ADMIN_USER);
-    if (knownAdminU && username.toLowerCase() === knownAdminU.toLowerCase()) {
-        loginAsAdmin(fullname, username, password, errorBox);
-        return;
-    }
-
     // Check registered users
     let registeredUsers = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
     const matchedUser = registeredUsers.find(user => user.username.toLowerCase() === username.toLowerCase());
@@ -1339,7 +1269,6 @@ function toggleAuthForm(mode) {
 function logout() {
     authUser = null;
     authUsername = null;
-    clearAdminSession();
     localStorage.removeItem(LS_AUTH);
     localStorage.removeItem('cse_portal_auth_username');
     switchView('login');
