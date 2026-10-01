@@ -1251,18 +1251,53 @@ function initGoogleAuth() {
         auto_select: false
     });
 
+    // Native GIS buttons kept hidden as fallback; visible UI is .google-custom-btn.
     ['google-signin-login', 'google-signin-register'].forEach(containerId => {
         const container = document.getElementById(containerId);
         if (container) {
-            google.accounts.id.renderButton(container, {
-                type: 'standard',
-                theme: 'outline',
-                size: 'large',
-                width: 400,
-                shape: 'pill'
-            });
+            try {
+                google.accounts.id.renderButton(container, {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    width: 320,
+                    shape: 'pill'
+                });
+            } catch (err) { /* custom button still works via prompt */ }
         }
     });
+}
+
+// Custom themed button entry point — triggers One Tap / account chooser.
+// Uses same client_id + same handleGoogleCredentialResponse callback, so no auth logic change.
+function triggerGoogleLogin() {
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+        alert('Google sign-in is not loaded. Check your connection and reload.');
+        return;
+    }
+    try {
+        google.accounts.id.prompt((notification) => {
+            try {
+                if (notification && typeof notification.isSkippedMoment === 'function') {
+                    const skipped = notification.isSkippedMoment();
+                    const dismissed = notification.isDismissedMoment && notification.isDismissedMoment();
+                    if (skipped || dismissed) {
+                        // One Tap suppressed (e.g. third-party cookies blocked) — reveal native button.
+                        document.querySelectorAll('.google-native-fallback').forEach(el => {
+                            el.classList.add('show-fallback');
+                        });
+                        const reason = notification.getSkippedReason ? notification.getSkippedReason() : 'prompt skipped';
+                        console.warn('Google One Tap skipped:', reason);
+                    }
+                }
+            } catch (err) { /* ignore */ }
+        });
+    } catch (err) {
+        // Fallback: show native GIS button if prompt fails.
+        document.querySelectorAll('.google-native-fallback').forEach(el => {
+            el.classList.add('show-fallback');
+        });
+    }
 }
 
 function base64UrlDecode(str) {
