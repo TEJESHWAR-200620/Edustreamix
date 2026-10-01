@@ -35,7 +35,7 @@ let timerMode = 'work'; // work, short, long
 let isTimerRunning = false;
 
 // --- Configuration ---
-const GOOGLE_CLIENT_ID = '1042188228689-ud8v65nconnfnq47kktdg7e6dlmmdrvg.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '612587563519-ovjoh912i57rqd23u6hj1o01ejdaub5v.apps.googleusercontent.com';
 const RAZORPAY_KEY_ID = 'rzp_live_StslEhMPMwafBq';
 const SUBSCRIPTION_AMOUNT = 4900; // ₹49 in paise
 const SUBSCRIPTION_PLAN_NAME = 'Full Access';
