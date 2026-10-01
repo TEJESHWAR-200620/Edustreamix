@@ -15,6 +15,7 @@ const LS_THEME = 'cse_portal_theme';
 const LS_RECENT = 'cse_portal_recent';
 const LS_AUTH = 'cse_portal_auth';
 const LS_CLEARED_QUIZZES = 'cse_portal_cleared_quizzes';
+const LS_VIDEO_PROGRESS = 'cse_portal_video_progress';
 
 // Load initial states from LocalStorage or defaults
 let progressState = JSON.parse(localStorage.getItem(LS_PROGRESS)) || {};
@@ -24,6 +25,7 @@ let recentActivity = JSON.parse(localStorage.getItem(LS_RECENT)) || [];
 let authUser = localStorage.getItem(LS_AUTH) || null;
 let authUsername = localStorage.getItem('cse_portal_auth_username') || null;
 let clearedQuizzesState = JSON.parse(localStorage.getItem(LS_CLEARED_QUIZZES)) || {};
+let videoProgressState = JSON.parse(localStorage.getItem(LS_VIDEO_PROGRESS)) || {};
 
 // Pomodoro Timer Variables
 let timerInterval = null;
@@ -80,6 +82,25 @@ function hasActiveSubscription() {
     if (isDemoAccount(authUsername)) return true;
     const sub = getSubscription();
     return !!(sub && sub.activatedAt);
+}
+
+// --- Free Trial: Unit 1 of every subject is watchable without subscription ---
+// Quiz stays locked even for the free unit.
+const FREE_TRIAL_UNIT_INDEX = 0;
+
+function isFreeTrialUnit(unitIndex) {
+    return unitIndex === FREE_TRIAL_UNIT_INDEX;
+}
+
+function canWatchUnit(unitIndex) {
+    if (isFreeTrialUnit(unitIndex)) return true;
+    return hasActiveSubscription();
+}
+
+function requireWatchAccess(unitIndex) {
+    if (canWatchUnit(unitIndex)) return true;
+    openSubscriptionModal('Unit 1 is a free trial. Subscribe for ₹49 to unlock all units.');
+    return false;
 }
 
 // Razorpay Key ID: single source of truth is RAZORPAY_KEY_ID in server .env,
@@ -181,7 +202,7 @@ function maybePromptSubscription() {
     if (hasActiveSubscription()) return;
     if (sessionStorage.getItem('est_sub_prompted') === '1') return;
     sessionStorage.setItem('est_sub_prompted', '1');
-    openSubscriptionModal('Subscribe for ₹49 to unlock all quizzes and features.');
+    openSubscriptionModal('Unit 1 of every subject is a free trial. Subscribe for ₹49 to unlock all units, quizzes and features.');
 }
 
 // --- Demo Account Logic ---
@@ -513,9 +534,9 @@ function countCompletedUnits(semIndex, subjIndex, totalUnits) {
     return count;
 }
 
-// Open chapters view for a subject (₹49 subscribers only, like Take Quiz)
+// Open chapters view for a subject — open to all so Unit 1 free trial is watchable.
+// Individual units beyond Unit 1 still require subscription (see requireWatchAccess).
 function openSubjectChapters(subjIndex) {
-    if (!requireSubscription()) return;
     currentSubject = subjIndex;
     const semIndex = currentYear * 2 + currentSem;
     const subject = cseAcademicData[semIndex].subjects[subjIndex];
@@ -595,6 +616,9 @@ function openEmbeddedVideo(semIndex, subjIndex, unitIndex, event) {
         event.preventDefault();
     }
 
+    // Free trial gate: Unit 1 free, rest need subscription. Quiz stays locked separately.
+    if (!requireWatchAccess(unitIndex)) return;
+
     const subject = cseAcademicData[semIndex].subjects[subjIndex];
     const unit = subject.units[unitIndex];
     const frameWrapper = document.querySelector('.video-frame-wrapper');
@@ -605,6 +629,7 @@ function openEmbeddedVideo(semIndex, subjIndex, unitIndex, event) {
     if (videoUrl === 'SEARCH_LINK') {
         // Search embedding is blocked by YouTube, open directly in a new tab
         window.open(unit.link, '_blank');
+        logStudyClick(semIndex, subjIndex, unitIndex);
         return;
     }
 
@@ -613,15 +638,65 @@ function openEmbeddedVideo(semIndex, subjIndex, unitIndex, event) {
         return;
     }
 
-    // Completely replace iframe to prevent Error 153 on reloads
-    // Stripped restrictive 'allow' and 'referrerpolicy' attributes as they often break local file embeds
-    frameWrapper.innerHTML = `<iframe id="embedded-video-frame" class="video-iframe" title="Course Video" src="${videoUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
-    
-    title.textContent = `${subject.name} • ${unit.unit}`;
-    subtitle.textContent = unit.chapter;
-    document.getElementById('video-modal-overlay').classList.add('active');
+    // Playlist embeds can't timestamp-resume via single-video API — use plain iframe.
+    if (videoUrl.includes('videoseries') || videoUrl.includes('list=')) {
+        stopAndDestroyPlayer();
+        currentVideoRef = { sem: semIndex, subj: subjIndex, unit: unitIndex };
+        frameWrapper.innerHTML = `<iframe id="embedded-video-frame" class="video-iframe" title="Course Video" src="${videoUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+        title.textContent = `${subject.name} • ${unit.unit}`;
+        subtitle.textContent = unit.chapter;
+        document.getElementById('video-modal-overlay').classList.add('active');
+        logStudyClick(semIndex, subjIndex, unitIndex);
+        return;
+    }
 
+    const videoId = extractYouTubeId(unit.link);
+    if (!videoId) {
+        frameWrapper.innerHTML = `<iframe id="embedded-video-frame" class="video-iframe" title="Course Video" src="${videoUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+        title.textContent = `${subject.name} • ${unit.unit}`;
+        subtitle.textContent = unit.chapter;
+        document.getElementById('video-modal-overlay').classList.add('active');
+        logStudyClick(semIndex, subjIndex, unitIndex);
+        return;
+    }
+
+    stopAndDestroyPlayer();
+    currentVideoRef = { sem: semIndex, subj: subjIndex, unit: unitIndex };
+    const saved = getVideoProgress(semIndex, subjIndex, unitIndex);
+    const resumeSeconds = saved && saved.seconds > 5 ? Math.floor(saved.seconds) : 0;
+
+    title.textContent = `${subject.name} • ${unit.unit}`;
+    subtitle.textContent = unit.chapter + (resumeSeconds > 0 ? ` • Resuming from ${formatTime(resumeSeconds)}` : '');
+    document.getElementById('video-modal-overlay').classList.add('active');
     logStudyClick(semIndex, subjIndex, unitIndex);
+
+    // If YouTube IFrame API isn't ready yet, fall back to start-param iframe.
+    if (typeof YT === 'undefined' || !YT.Player) {
+        const startParam = resumeSeconds > 0 ? `?start=${resumeSeconds}&rel=0` : `?rel=0`;
+        frameWrapper.innerHTML = `<iframe id="embedded-video-frame" class="video-iframe" title="Course Video" src="https://www.youtube.com/embed/${videoId}${startParam}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+        return;
+    }
+
+    frameWrapper.innerHTML = `<div id="yt-player"></div>`;
+    ytPlayer = new YT.Player('yt-player', {
+        width: '100%',
+        height: '100%',
+        videoId: videoId,
+        playerVars: { rel: 0, start: resumeSeconds },
+        events: {
+            onReady: function (e) {
+                try {
+                    if (resumeSeconds > 0) e.target.seekTo(resumeSeconds, true);
+                } catch (err) { /* ignore */ }
+                startProgressPolling();
+            },
+            onStateChange: function (e) {
+                // YT.PlayerState: 1 playing, 2 paused, 0 ended
+                if (e.data === 2 || e.data === 0) saveCurrentPlayerProgress(e.data === 0);
+                if (e.data === 1) startProgressPolling();
+            }
+        }
+    });
 }
 
 function closeEmbeddedVideo(event) {
@@ -629,9 +704,104 @@ function closeEmbeddedVideo(event) {
         event.stopPropagation();
     }
 
+    // Save timestamp before destroying player so Quick Resume restores mid-video.
+    try { saveCurrentPlayerProgress(false); } catch (err) { /* ignore */ }
+    stopAndDestroyPlayer();
+    currentVideoRef = null;
+
     document.getElementById('video-modal-overlay').classList.remove('active');
-    // Clear iframe from DOM completely to stop playback and prevent dirty state
+    // Clear player DOM completely to stop playback and prevent dirty state
     document.querySelector('.video-frame-wrapper').innerHTML = '';
+}
+
+// --- Video timestamp progress (Quick Resume) ---
+let ytPlayer = null;
+let ytProgressTimer = null;
+let currentVideoRef = null;
+let ytApiReady = false;
+
+function onYouTubeIframeAPIReady() {
+    ytApiReady = true;
+}
+
+function getVideoProgressKey(semIndex, subjIndex, unitIndex) {
+    const user = authUsername || 'guest';
+    return `${user}_${semIndex}-${subjIndex}-${unitIndex}`;
+}
+
+function getVideoProgress(semIndex, subjIndex, unitIndex) {
+    return videoProgressState[getVideoProgressKey(semIndex, subjIndex, unitIndex)] || null;
+}
+
+function formatTime(totalSeconds) {
+    const s = Math.max(0, Math.floor(totalSeconds || 0));
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    const h = Math.floor(m / 60);
+    if (h > 0) return `${h}:${String(m % 60).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function extractYouTubeId(rawLink) {
+    const sourceUrl = extractYouTubeUrl(rawLink);
+    if (!sourceUrl) return '';
+    try {
+        const parsedUrl = new URL(sourceUrl);
+        const hostname = parsedUrl.hostname.replace(/^www\./, '');
+        if (hostname === 'youtu.be') return parsedUrl.pathname.replace('/', '').split(/[?&#]/)[0];
+        if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
+            const v = parsedUrl.searchParams.get('v');
+            if (v) return v;
+            const parts = parsedUrl.pathname.split('/').filter(Boolean);
+            if (parts[0] === 'embed' && parts[1]) return parts[1];
+            if (parts[0] === 'shorts' && parts[1]) return parts[1];
+        }
+    } catch (error) { /* ignore */ }
+    return '';
+}
+
+function saveVideoProgress(semIndex, subjIndex, unitIndex, seconds, duration) {
+    if (!seconds || seconds < 1) return;
+    const key = getVideoProgressKey(semIndex, subjIndex, unitIndex);
+    // If video essentially finished (>95%), clear resume so it shows as Replay.
+    if (duration && seconds >= duration * 0.95) {
+        delete videoProgressState[key];
+    } else {
+        videoProgressState[key] = { seconds: Math.floor(seconds), duration: Math.floor(duration || 0), updatedAt: Date.now() };
+    }
+    try { localStorage.setItem(LS_VIDEO_PROGRESS, JSON.stringify(videoProgressState)); } catch (err) { /* quota */ }
+}
+
+function saveCurrentPlayerProgress(isEnded) {
+    if (!ytPlayer || !currentVideoRef) return;
+    try {
+        if (typeof ytPlayer.getCurrentTime !== 'function') return;
+        const seconds = ytPlayer.getCurrentTime();
+        let duration = 0;
+        try { duration = ytPlayer.getDuration ? ytPlayer.getDuration() : 0; } catch (err) { duration = 0; }
+        if (isEnded && duration) {
+            saveVideoProgress(currentVideoRef.sem, currentVideoRef.subj, currentVideoRef.unit, duration, duration);
+        } else {
+            saveVideoProgress(currentVideoRef.sem, currentVideoRef.subj, currentVideoRef.unit, seconds, duration);
+        }
+        renderRecentActivity();
+    } catch (err) { /* player not ready */ }
+}
+
+function startProgressPolling() {
+    if (ytProgressTimer) clearInterval(ytProgressTimer);
+    ytProgressTimer = setInterval(() => {
+        if (ytPlayer && currentVideoRef) saveCurrentPlayerProgress(false);
+        else clearInterval(ytProgressTimer);
+    }, 5000);
+}
+
+function stopAndDestroyPlayer() {
+    if (ytProgressTimer) { clearInterval(ytProgressTimer); ytProgressTimer = null; }
+    if (ytPlayer) {
+        try { ytPlayer.destroy(); } catch (err) { /* ignore */ }
+        ytPlayer = null;
+    }
 }
 
 function renderChaptersList() {
@@ -645,9 +815,11 @@ function renderChaptersList() {
         const key = `${semIndex}-${currentSubject}-${index}`;
         const isCompleted = !!progressState[key];
         const isBookmarked = isTopicBookmarked(semIndex, currentSubject, index);
+        const isFree = isFreeTrialUnit(index);
+        const isLocked = !isFree && !hasActiveSubscription();
 
         const item = document.createElement('div');
-        item.className = 'chapter-item';
+        item.className = 'chapter-item' + (isLocked ? ' chapter-locked' : '');
         item.innerHTML = `
             <div class="chapter-left">
                 <div class="chapter-checkbox-wrapper">
@@ -657,7 +829,7 @@ function renderChaptersList() {
                     </div>
                 </div>
                 <div class="chapter-details">
-                    <div class="chapter-unit-tag">${unit.unit}</div>
+                    <div class="chapter-unit-tag">${unit.unit} ${isFree ? '<span class="free-trial-badge">Free Trial</span>' : ''} ${isLocked ? '<span class="locked-badge"><i class="fa-solid fa-lock"></i> Premium</span>' : ''}</div>
                     <div class="chapter-title" title="${unit.chapter}">${unit.chapter}</div>
                 </div>
             </div>
@@ -668,8 +840,8 @@ function renderChaptersList() {
                 <button class="chapter-action-btn notes" onclick="openNotes('${key}', '${subject.name} - ${unit.unit}')" title="Scribble Study Notes">
                     <i class="fa-solid fa-pen-to-square"></i> Notes
                 </button>
-                <button type="button" class="chapter-action-btn youtube" onclick="openEmbeddedVideo(${semIndex}, ${currentSubject}, ${index}, event)">
-                    <i class="fa-brands fa-youtube"></i> Watch
+                <button type="button" class="chapter-action-btn youtube ${isLocked ? 'locked' : ''}" onclick="openEmbeddedVideo(${semIndex}, ${currentSubject}, ${index}, event)">
+                    <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-brands fa-youtube'}"></i> ${isLocked ? 'Unlock' : 'Watch'}
                 </button>
             </div>
         `;
@@ -866,7 +1038,7 @@ function closeNotes() {
     document.getElementById('notes-modal-overlay').classList.remove('active');
 }
 
-// Log study clicks for recently opened items
+// Log study clicks for recently opened items (Quick Resume source)
 function logStudyClick(semIndex, subjIndex, unitIndex) {
     const subject = cseAcademicData[semIndex].subjects[subjIndex];
     const unit = subject.units[unitIndex];
@@ -886,37 +1058,49 @@ function logStudyClick(semIndex, subjIndex, unitIndex) {
         timestamp: Date.now()
     });
 
-    // Cap at 4 items
-    if (recentActivity.length > 4) {
-        recentActivity.pop();
+    // Cap at 6 items so Quick Resume shows more history
+    if (recentActivity.length > 6) {
+        recentActivity = recentActivity.slice(0, 6);
     }
 
     localStorage.setItem(LS_RECENT, JSON.stringify(recentActivity));
+    renderRecentActivity();
 }
 
 function renderRecentActivity() {
     const list = document.getElementById('resume-list');
+    if (!list) return;
     list.innerHTML = '';
 
     if (recentActivity.length === 0) {
         list.innerHTML = `
             <div class="empty-state" style="padding: 20px 0;">
-                <p>No recent activity. Open embedded videos to begin studying!</p>
+                <p>No recent activity. Watch the free Unit 1 trial to see it here!</p>
             </div>
         `;
         return;
     }
 
     recentActivity.forEach(r => {
+        const prog = (typeof getVideoProgress === 'function') ? getVideoProgress(r.sem, r.subj, r.unit) : null;
+        const seconds = prog ? prog.seconds : 0;
+        const duration = prog ? prog.duration : 0;
+        const percent = (duration > 0 && seconds > 0) ? Math.min(99, Math.round((seconds / duration) * 100)) : 0;
+        const hasResume = seconds > 5;
+        const label = hasResume ? `Resume • ${formatTime(seconds)}${duration ? ' / ' + formatTime(duration) : ''}` : 'Start watching';
+        const btnLabel = hasResume ? `<i class="fa-solid fa-play"></i><span class="resume-btn-time">${formatTime(seconds)}</span>` : `<i class="fa-solid fa-play"></i>`;
+
         const item = document.createElement('div');
         item.className = 'resume-item';
         item.innerHTML = `
             <div class="resume-title-box">
                 <div class="resume-subject">${r.subjectName} • ${r.unitName}</div>
                 <div class="resume-chapter" title="${r.chapterName}">${r.chapterName}</div>
+                <div class="resume-progress-meta">${label}${percent ? ` • ${percent}%` : ''}</div>
+                ${hasResume ? `<div class="resume-progress-track"><div class="resume-progress-fill" style="width: ${percent}%;"></div></div>` : ''}
             </div>
-            <button type="button" class="resume-play-btn" onclick="openEmbeddedVideo(${r.sem}, ${r.subj}, ${r.unit}, event)" title="Continue Studying">
-                <i class="fa-solid fa-play"></i>
+            <button type="button" class="resume-play-btn resume-continue" onclick="openEmbeddedVideo(${r.sem}, ${r.subj}, ${r.unit}, event)" title="Continue Studying">
+                ${btnLabel}
             </button>
         `;
         list.appendChild(item);
@@ -931,6 +1115,7 @@ function resetAllProgress() {
         localStorage.removeItem(LS_NOTES);
         localStorage.removeItem(LS_RECENT);
         localStorage.removeItem(LS_CLEARED_QUIZZES);
+        localStorage.removeItem(LS_VIDEO_PROGRESS);
         localStorage.removeItem('cse_portal_auth_username');
         // Keep issued demo accounts (demopro) so subscribers don't lose them on reset
         const users = JSON.parse(localStorage.getItem('cse_portal_registered_users')) || [];
@@ -945,6 +1130,7 @@ function resetAllProgress() {
         notesState = {};
         recentActivity = [];
         clearedQuizzesState = {};
+        videoProgressState = {};
         authUsername = null;
         updateDashboardStats();
         renderSemesterProgressBars();
@@ -1942,10 +2128,10 @@ async function createQuizQuestionsForSubject(subjectName) {
     return getLocalQuizQuestionsForSubject(subjectName);
 }
 
-// Subscription gate before any quiz
+// Subscription gate before any quiz (quiz stays locked even for free trial Unit 1)
 function requireSubscription() {
     if (hasActiveSubscription()) return true;
-    openSubscriptionModal('Subscribe for ₹49 to unlock quizzes and start your assessment.');
+    openSubscriptionModal('Quiz is a premium feature. Unit 1 video is free trial — subscribe for ₹49 to unlock quizzes and all units.');
     return false;
 }
 
